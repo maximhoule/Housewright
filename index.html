@@ -138,6 +138,8 @@ p{margin:0}
 .tile span{font-size:12px;color:var(--mute)}
 .card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:10px 12px}
 .dwg.zoom svg{width:260%!important;max-width:none}
+.g3bar{position:absolute;left:8px;right:8px;bottom:118px;background:var(--panel);border:1px solid var(--line);border-left:5px solid var(--accent);border-radius:10px;padding:8px 10px;z-index:4;box-shadow:0 6px 20px rgba(0,0,0,.25)}.g3bar .row{flex-wrap:wrap;gap:6px}
+.pchips{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:6px}.pchip{display:flex;align-items:center;gap:8px;text-align:left;padding:6px;border:1px solid var(--line);border-radius:8px;background:var(--panel);color:var(--ink);font:inherit;font-size:13px;cursor:pointer}.pchip i{width:30px;height:30px;border-radius:6px;background:var(--c);flex:none;border:1px solid rgba(0,0,0,.15)}.pchip small{display:block;opacity:.6}.pchip.big i{width:48px;height:48px}
 .pastebox{margin-top:8px;min-height:44px;border:1.5px dashed var(--line);border-radius:10px;padding:10px 12px;font-size:14px;color:var(--ink);outline:none}.pastebox:empty::before{content:attr(data-ph);color:var(--mute,#888)}.pastebox:focus{border-color:var(--accent)}
 .filebtn{position:relative;overflow:hidden;cursor:pointer;display:inline-flex;align-items:center;justify-content:center}.filebtn input[type=file]{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;font-size:200px}
 .pin{width:74px;padding:4px 6px;border:1px solid var(--line);border-radius:6px;font:inherit;background:var(--bg);color:var(--ink)}.pin.s{width:52px}details.card summary{cursor:pointer;padding:2px 0}details.card[open] summary{margin-bottom:6px}
@@ -258,7 +260,7 @@ table.cmp{width:100%;table-layout:fixed}table.cmp tr>*:first-child{width:27%}tab
       <div class="gbar top"><div class="seg" id="gmode"></div><select id="gsel" data-f="gsel" aria-label="What to show"></select></div>
       <div class="hint" id="ghint"></div>
       <div id="ptwrap" hidden><div id="ptstat"><span id="pttext">Starting</span><button class="btn" data-a="ptclose">Close</button></div><div id="ptbar"><i></i></div><canvas id="pt"></canvas><img id="ptimg" alt="Photo render of the current view" hidden><div id="ptbtns"><button class="btn" data-a="ptsave" id="ptsave">Save photo</button><button class="btn" data-a="ptmore">More detail</button><button class="btn" data-a="photo">Make an AI photo from this</button></div></div>
-      <div class="gbar bot"><label for="gtime" id="gtl"></label><input type="range" id="gtime" min="5" max="21" step="0.25" data-f="gtime"><select id="gmonth" data-f="gmonth" aria-label="Month"><option value="1">Jan</option><option value="2">Feb</option><option value="3">Mar</option><option value="4">Apr</option><option value="5">May</option><option value="6">Jun</option><option value="7">Jul</option><option value="8">Aug</option><option value="9">Sep</option><option value="10">Oct</option><option value="11">Nov</option><option value="12">Dec</option></select><button class="btn" data-a="lights" id="glights">Lights on</button><button class="btn p" data-a="render">Photo render</button><button class="btn" data-a="snap" id="gsnap">Save image</button></div>
+      <div id="g3bar" class="g3bar" hidden></div><div class="gbar bot"><label for="gtime" id="gtl"></label><input type="range" id="gtime" min="5" max="21" step="0.25" data-f="gtime"><select id="gmonth" data-f="gmonth" aria-label="Month"><option value="1">Jan</option><option value="2">Feb</option><option value="3">Mar</option><option value="4">Apr</option><option value="5">May</option><option value="6">Jun</option><option value="7">Jul</option><option value="8">Aug</option><option value="9">Sep</option><option value="10">Oct</option><option value="11">Nov</option><option value="12">Dec</option></select><button class="btn" data-a="e3on" id="gedit">Edit</button><button class="btn" data-a="lights" id="glights">Lights on</button><button class="btn p" data-a="render">Photo render</button><button class="btn" data-a="snap" id="gsnap">Save image</button></div>
     </section>
     <section id="v-checks"><div class="scroll"><div class="wrap" id="checks"></div></div></section>
     <section id="v-budget"><div class="scroll"><div class="wrap" id="budget"></div></div></section>
@@ -2037,6 +2039,7 @@ CONVERSATION SO FAR:
 ${hist || '(none)'}
 OWNER NOW: ${text}
 ${img ? 'The owner attached a PHOTO of a space they love. Study it closely: style, colours, materials, flooring, wall treatment, cabinetry, lighting mood, furniture types and arrangement ideas. Recreate that look in this room as closely as the keys below allow (use "#rrggbb" paint to match wall colours, recolour furniture, pick the closest floor and cabinet keys, add matching furniture and lighting). In the reply, say briefly what you took from the photo and anything you could not match.\n' : ''}
+OWNER: ${profileBrief()} This room is marked ${PRIO[prioOf(r)][0].toLowerCase()} in the budget${prioOf(r) == 'save' ? ': choose good-value finishes' : prioOf(r) == 'splurge' ? ': premium finishes are welcome' : ''}.
 RULES: Change only what the owner asks for, plus what their request clearly implies. For a star, starlight or fibre-optic ceiling use ceil "starlight"; for a black ceiling "ceil_black". If no key matches a finish exactly, use the closest key, say so in the reply and add the exact wish to notes; never swap in an unrelated material. Keep furniture clear of doors and other furniture, about 0.9 m walkways, and inside the room. Bedrooms need an egress window. Choose finishes that suit the room (no wood or carpet floors in wet rooms). If the request is unclear or impossible, make no ops and ask ONE short question in reply, or explain the limit and offer the closest option.
 CATALOG item keys: ${Object.entries(ITEMS).map(([k, i]) => `${k}=${i.n} ${i.w}x${i.d}`).join('; ')}
 FLOOR keys: ${ml(isOut(r) ? 'o' : 'f')}
@@ -2160,6 +2163,7 @@ function shrinkImage(file, max, q) {
 async function imgPicked(file, kind) {
   if (kind == 'lot') return lotImage(file);
   if (kind == 'stylechat') { UI.tab = 'chat'; kind = 'chat'; }
+  if (kind == 'colour') { try { UI.colPhoto = await photoColours(file); renderSheet(); } catch (e) { toast('That photo could not be read.'); } return; }
   if (!file || !/^image\//.test(file.type)) { toast('Pick a photo file.'); return; }
   try { const big = await shrinkImage(file, 1280, .85), small = await shrinkImage(file, 220, .7); UI.img = { for: kind, blob: big.blob, thumb: small.url }; renderSheet(); }
   catch (e) { toast('That photo could not be read. Try a JPEG or PNG.'); }
@@ -2182,6 +2186,7 @@ CONVERSATION SO FAR:
 ${hist || '(none)'}
 OWNER NOW: ${text}
 ${img ? 'The owner attached a PHOTO of a house or space they love. Study it: architectural style, cladding, roof shape and colour, pitch, window and trim colours, porch, front door colour, and, if it shows interiors, the interior style. Recreate that look with exterior ops (siding, roof, pitch, shape, porch; pick the closest keys) and, for interior photos, room ops on the rooms it fits. In the reply, say what you took from the photo and anything the app cannot match.\n' : ''}
+OWNER: ${profileBrief()}
 RULES: Change only what is asked or clearly implied. When you make a room bigger, move or shrink its neighbours so nothing overlaps. Give every new indoor room at least one door; bedrooms need an egress window on an exterior wall. Typical sizes: bedroom 3.4x3.6, primary 4.3x4.6, bathroom 2.4x3.0, office 3.0x3.4. If the request is unclear or would break the code, make no ops and ask ONE short question or explain the closest option.
 ROOM TYPES: ${Object.entries(TYPES).map(([k, t]) => `${k}=${t.n}${t.out ? ' (site)' : ''}`).join('; ')}
 EXTERIOR STYLE keys: ${Object.entries(STYLES).map(([k, s]) => k + '=' + s[0]).join('; ')}
@@ -2310,7 +2315,7 @@ function wallAreaOf(r) { // net paintable wall area of one room, metres squared
 function finishRows() {
   const rows = {}, add = (cat, slot, key, out, room, qty, unit) => {
     if (!key || qty <= 0) return; const f = famOf(key, slot, out), id = cat + '|' + key;
-    const o = rows[id] || (rows[id] = { cat, key, slot, f, name: key[0] == '#' ? 'Paint, custom colour ' + key.toUpperCase() : (MATS[key] || ['?'])[0], qty: 0, unit, rooms: [], bad: [] });
+    const o = rows[id] || (rows[id] = { cat, key, slot, f, name: key[0] == '#' ? (paintName(key) ? 'Paint, ' + paintName(key) : 'Paint, custom colour ' + key.toUpperCase()) : (MATS[key] || ['?'])[0], qty: 0, unit, rooms: [], bad: [] });
     o.qty += qty; if (room && !o.rooms.includes(room.name)) o.rooms.push(room.name);
     if (room && FAM[f] && FAM[f].avoid[room.type] && !o.bad.includes(room.name)) o.bad.push(room.name);
   };
@@ -2395,7 +2400,7 @@ async function vLoad(v) {
 function vStats(data) { // swap the design in, measure it, swap back
   const keep = P, kChk = CHK; let out = null;
   try {
-    P = Object.assign(blankProject(), JSON.parse(JSON.stringify(data))); P.versions = keep.versions; biRegister();
+    P = Object.assign(blankProject(), JSON.parse(JSON.stringify(data))); P.versions = keep.versions; regAll();
     const IN = indoor(), E = estimate(), C = runChecks();
     out = { area: areaOf('M') + areaOf('U') - IN.filter(r => r.type == 'garage').reduce((s, r) => s + r.w * r.d, 0), bsmt: areaOf('B'), beds: IN.filter(r => T(r).bed && !r.part).length, baths: IN.filter(r => T(r).wet && !r.part).length, rooms: IN.filter(r => !r.part).length,
       lo: E.lo, hi: E.hi, err: C.filter(c => c.sev == 'err').length, warn: C.filter(c => c.sev == 'warn').length,
@@ -2403,7 +2408,7 @@ function vStats(data) { // swap the design in, measure it, swap back
       roomMap: Object.fromEntries(P.rooms.filter(r => !r.part).map(r => [r.name, { a: groupOf(r).reduce((s, q) => s + q.w * q.d, 0), floor: r.floor, walls: r.walls, lv: r.lv, items: r.items.length }])),
       plan: planSVG('M', { pal: PKPAL, ppm: 30, dims: 0, noSite: 1 }), box: bbox(indoor('M')) };
   } catch (e) { out = null; }
-  P = keep; biRegister(); CHK = kChk; return out;
+  P = keep; regAll(); CHK = kChk; return out;
 }
 function vDiff(a, b) { // what changed from a to b, in plain words
   const out = [], A = a.roomMap, B = b.roomMap;
@@ -2515,7 +2520,7 @@ function shootCard() {
   return `<div class="card"><h3 style="margin-top:0">Photo shoot</h3><p class="muted">Renders ${n} photos, one per room plus the front and back of the house, with real light from windows and fixtures. Keep the screen on; it can take several minutes. ${CAP.assets ? 'Photos are saved with your project.' : 'Photos last until you close the app here, so download the package to keep them.'}</p>
   <div class="chips">${Object.entries(SHOOT_Q).map(([k, q]) => `<button class="chip${SHOOT.q == k ? ' on' : ''}" data-a="shootq" data-v="${k}">${q[0]} · ${q[1]} × ${q[2]}</button>`).join('')}<button class="chip${SHOOT.small ? ' on' : ''}" data-a="shootsmall">Include halls and closets</button></div>
   <div class="row"><button class="btn p" data-a="shoot">${S.length ? 'Shoot again' : 'Start the photo shoot'}</button></div>
-  ${S.length ? `<div class="shots">${S.map((s, i) => `<figure><img src="${s.src}" alt="${esc(s.title)}" loading="lazy"><figcaption>${esc(s.title)}${s.at ? ' · ' + s.at : ''}${s.id ? '' : ' · not saved'}</figcaption><div class="row">${CAP.dl ? `<button class="btn" data-a="shotsave" data-i="${i}">Save</button>` : ''}<button class="btn" data-a="shotai" data-i="${i}">AI prompt</button><button class="btn d" data-a="shotdel" data-i="${i}">Remove</button></div></figure>`).join('')}</div>` : ''}</div>`;
+  ${S.length ? `<div class="shots">${S.map((s, i) => `<figure><img src="${s.src}" alt="${esc(s.title)}" loading="lazy"><figcaption>${esc(s.title)}${s.at ? ' · ' + s.at : ''}${s.id ? '' : ' · not saved'}</figcaption><div class="row">${CAP.dl ? `<button class="btn" data-a="shotsave" data-i="${i}">Save</button>` : ''}<button class="btn${(P.likes || []).some(l => l.photo == (s.id || s.title) && l.up) ? ' p' : ''}" data-a="shotlike" data-i="${i}" data-v="1" aria-label="Like">👍</button><button class="btn${(P.likes || []).some(l => l.photo == (s.id || s.title) && !l.up) ? ' p' : ''}" data-a="shotlike" data-i="${i}" data-v="0" aria-label="Dislike">👎</button><button class="btn" data-a="shotai" data-i="${i}">AI prompt</button><button class="btn d" data-a="shotdel" data-i="${i}">Remove</button></div></figure>`).join('')}</div>` : ''}</div>`;
 }
 function shotsHTML() {
   const S = photosList(); if (!S.length) return '';
@@ -3014,7 +3019,7 @@ function runChecks() {
   for (const d of doubles()) { const over = indoor('U').filter(u => ovArea(u, d) > .2); if (over.length) add('err', 'Structure', `${over[0].name} sits over the two-storey ${d.name.toLowerCase()}`, 'A two-storey space needs nothing above it. Move the upstairs room, or change the ceiling back to a single storey.', '', d); else add('info', 'Structure', `${d.name}: two-storey space`, 'Tall walls need engineered framing (balloon framing or a strongback design) for wind load, plus fire blocking. Your designer sizes these.', 'NBC 9.23', d); }
   for (const r of IN) if ((r.ct == 'vaulted' || r.ct == 'cathedral') && above(r.lv) && indoor(above(r.lv)).some(u => ovArea(u, r) > .2)) add('err', 'Structure', `${r.name}: vaulted ceiling under another room`, 'A vaulted ceiling needs roof directly above it. Use a tray or coffered ceiling instead, or move the room above.', '', r);
   for (const r of IN) if (r.lv == 'U' && r.overlook && voidIvAll(r)) add('info', 'Code', `${r.name}: railing over the two-storey space`, 'Guard at least 900 mm high with no openings over 100 mm.', 'NBC 9.8.8', r);
-  materialChecks(add); if (typeof energyChecks == 'function') energyChecks(add); if (typeof structureChecks == 'function') structureChecks(add);
+  materialChecks(add); if (typeof energyChecks == 'function') energyChecks(add); if (typeof structureChecks == 'function') structureChecks(add); if (typeof mustChecks == 'function') mustChecks(add);
   return C;
 }
 
@@ -3176,6 +3181,7 @@ function planSVG(lv, o) {
     }
   }
   if (typeof mepSVG == 'function' && !o.noSite && o.edit) S.push(mepSVG(lv, o));
+  if (UI.multi && o.edit) for (const id of UI.multi) { const r = byId(id); if (r && r.lv == lv) for (const q of [r, ...partsOf(r)]) S.push(`<rect x="${q.x}" y="${q.y}" width="${q.w}" height="${q.d}" fill="#2b6cdf" fill-opacity=".14" stroke="#2b6cdf" stroke-width="${n3(3 / o.ppm)}" pointer-events="none"/>`); }
   return S.join('');
 }
 // simple outside views for the builder package: looking at the wall that faces `side`
@@ -3614,7 +3620,7 @@ function planCard(pl) { // measured by building it quietly, then putting the rea
   try { planGenerate(pl); const IN = indoor(), E = estimate(), pal = { ...PKPAL, wallFill: matHex(P.ext.siding), roof: matHex(P.ext.roof) };
     out = { area: areaOf('M') + areaOf('U') - IN.filter(r => r.type == 'garage').reduce((s, r) => s + r.w * r.d, 0), beds: IN.filter(r => T(r).bed && !r.part).length, baths: IN.filter(r => T(r).wet && !r.part).length, lo: E.lo, hi: E.hi, svg: elevationSVG('S', pal), storeys: indoor('U').length ? 2 : 1 };
   } catch (e) { out = null; }
-  P = keep; biRegister(); CHK = kChk; return PCARD[pl[0]] = out;
+  P = keep; regAll(); CHK = kChk; return PCARD[pl[0]] = out;
 }
 function plansSheet() {
   const flt = UI.pf || 'all', list = PLANS.filter(pl => flt == 'all' || (flt == '1' && pl[3].storeys == 1) || (flt == '2' && pl[3].storeys == 2) || PLAN_FAM[pl[3].style] == flt);
@@ -4228,12 +4234,15 @@ function allowances(sub) {
     ['al_frame', 'Framing labour: floors, walls, sheathing, roof set', (areaOf('B') * .3 + areaOf('M') + areaOf('U')) * 10.7639 * 15], ['al_gen', 'Site supervision, temporary power, bins, cleaning, equipment', sub * .06],
     ['al_test', 'Blower-door tests and energy model', 1500], ['al_land', 'Lawn and planting', yard * 18], ['al_perm', 'Permits, survey, design and engineering', 12000 + sub * .02]
   ].filter(a => a[2] > 0);
+  const pf = rs => { const a = rs.reduce((s, r) => s + r.w * r.d, 0); return a ? rs.reduce((s, r) => s + r.w * r.d * PRIO[prioOf(r)][1], 0) / a : 1; }, kitF = pf(IN.filter(r => r.type == 'kitchen')), wetF = pf(IN.filter(r => T(r).wet)), allF = pf(IN.filter(r => r.type != 'garage'));
+  for (const a of A) a[2] *= a[0] == 'al_kit' || a[0] == 'al_app' ? kitF : a[0] == 'al_plumb' ? wetF : ['al_light', 'al_cu', 'al_fp'].includes(a[0]) ? allF : 1;
   return A.map(([id, label, v]) => { const o = (P.prices || {})[id]; return { id, label, v: o && o.v != null ? o.v : Math.round(v * finK(id) / 100) * 100 }; });
 }
 function itemized() {
   const L = takeoff(), trades = {}; let sub = 0, unpriced = 0;
   for (const l of L) { const key = `${l.trade}|${l.item}|${l.unit}`, rule = PRICE_RULES.find(r => r[1].test(key)); const p = rule ? priceOf(rule[0]) : { mat: 0, lab: 0 }, mat = l.qty * p.mat, lab = l.qty * p.lab; if (!rule) unpriced++;
     const t = trades[l.trade] = trades[l.trade] || { mat: 0, lab: 0, lines: [] }; t.mat += mat; t.lab += lab; t.lines.push({ ...l, rule: rule && rule[0], p, cost: mat + lab }); }
+  { const IN2 = indoor().filter(r => r.type != 'garage'), a = IN2.reduce((s, r) => s + r.w * r.d, 0), f = a ? IN2.reduce((s, r) => s + r.w * r.d * PRIO[prioOf(r)][1], 0) / a : 1; for (const t of ['Flooring', 'Trim', 'Paint']) if (trades[t]) { trades[t].mat *= f; trades[t].lab *= f; } }
   const Q = ((P.prices || {})._q) || {}; for (const [k, t] of Object.entries(trades)) { t.est = t.mat + t.lab; if (Q[k] > 0) { t.quote = Q[k]; t.mat = Q[k]; t.lab = 0; } sub += t.mat + t.lab; }
   const al = allowances(sub), alT = al.reduce((s, a) => s + a.v, 0), c = Object.assign({ gc: 15, cont: typeof costCfg == 'function' ? costCfg().cont : 10 }, (P.prices || {})._pct || {});
   const base = sub + alT, gc = base * c.gc / 100, cont = (base + gc) * c.cont / 100, pre = base + gc + cont, hst = pre * .14;
@@ -4244,7 +4253,7 @@ function pricingSheet() {
   const X = itemized(), E = estimate(), $ = v => fMoney(v), inp = (id, k, v) => `<input type="number" inputmode="decimal" class="pin" data-f="prc" data-r="${id}" data-k="${k}" value="${v}" min="0" step="any" aria-label="${k == 'mat' ? 'Material' : 'Install'} price">`;
   const inRange = X.total >= E.lo * .9 && X.total <= E.hi * 1.1;
   return `<p class="muted">Your materials list priced line by line, material and install separately, plus allowances for what the list does not count. Prices are starting guesses for Nova Scotia, scaled to your finish level (${esc(COST_LEVELS[finLevel()] ? COST_LEVELS[finLevel()][0] : '')}); replace them with supplier and trade quotes as they come in and the total updates.</p>
-  <div class="card hero"><span class="muted">Itemized total with HST</span><b>${$(X.total)}</b><span class="muted">Square-foot estimate: ${fK(E.lo)} to ${fK(E.hi)}. ${inRange ? 'The two agree.' : X.total < E.lo ? 'Itemized is lower: allowances or prices may be light.' : 'Itemized is higher: check the biggest lines below.'}</span></div>
+  ${(() => { const sp = indoor().filter(r => r.prio == 'splurge').map(r => r.name), sv = indoor().filter(r => r.prio == 'save').map(r => r.name); return sp.length || sv.length ? `<p class="muted">${sp.length ? 'Splurge: ' + esc(sp.join(', ')) + '. ' : ''}${sv.length ? 'Save: ' + esc(sv.join(', ')) + '.' : ''} Finishes, fixtures and lighting are priced up or down for these rooms.</p>` : '<p class="muted">Mark rooms Splurge or Save in each room (Design tab) to steer the money.</p>'; })()}<div class="card hero"><span class="muted">Itemized total with HST</span><b>${$(X.total)}</b><span class="muted">Square-foot estimate: ${fK(E.lo)} to ${fK(E.hi)}. ${inRange ? 'The two agree.' : X.total < E.lo ? 'Itemized is lower: allowances or prices may be light.' : 'Itemized is higher: check the biggest lines below.'}</span></div>
   <div class="card tw"><table class="tbl"><tr><th>Trade</th><th>Material</th><th>Install</th><th>Total</th></tr>${TAKE_TRADES.filter(t => X.trades[t]).map(t => { const v = X.trades[t]; return v.quote ? `<tr><td>${t} <small class="muted">quoted</small></td><td colspan="2"><small class="muted">estimate was ${fK(v.est)}</small></td><td><b>${fK(v.quote)}</b></td></tr>` : `<tr><td>${t}</td><td>${fK(v.mat)}</td><td>${fK(v.lab)}</td><td><b>${fK(v.mat + v.lab)}</b></td></tr>`; }).join('')}
   <tr class="cat"><td>Counted materials and install</td><td></td><td></td><td>${fK(X.sub)}</td></tr>${X.al.map(a => `<tr><td colspan="3">${esc(a.label)}</td><td><input type="number" inputmode="decimal" class="pin" data-f="pral" data-r="${a.id}" value="${a.v}" min="0" step="100" aria-label="${esc(a.label)}"></td></tr>`).join('')}
   <tr><td colspan="3">Builder overhead and profit <input type="number" class="pin s" data-f="prpct" data-k="gc" value="${X.pct.gc}" min="0" max="40" aria-label="Builder percent">%</td><td>${fK(X.gc)}</td></tr><tr><td colspan="3">Contingency <input type="number" class="pin s" data-f="prpct" data-k="cont" value="${X.pct.cont}" min="0" max="40" aria-label="Contingency percent">%</td><td>${fK(X.cont)}</td></tr><tr><td colspan="3">HST 14%</td><td>${fK(X.hst)}</td></tr><tr class="cat"><td colspan="3">Total</td><td>${$(X.total)}</td></tr></table></div>
@@ -4570,6 +4579,185 @@ async function importGo() {
   if (!o || !Array.isArray(o.rooms)) { toast('That is not project data.'); return; }
   try { if (P.rooms.length && typeof vSave == 'function') await vSave('Before importing'); } catch (e) { }
   pushUndo(lastJSON); loadProject(o); save(); closeSheet(true); refresh(); toast(`${P.name || 'House'} loaded.`);
+}
+
+// ---------- Personal: paint colours and codes, colour from a photo ----------
+// Brand colours as on-screen approximations; always check a real sample.
+const PAINTS = [
+  ['Benjamin Moore', 'OC-65', 'Chantilly Lace', '#f5f5f0'], ['Benjamin Moore', 'OC-117', 'Simply White', '#f3f0e2'], ['Benjamin Moore', 'OC-17', 'White Dove', '#efede3'], ['Benjamin Moore', 'OC-45', 'Swiss Coffee', '#ede6d6'],
+  ['Benjamin Moore', 'OC-20', 'Pale Oak', '#dcd3c5'], ['Benjamin Moore', 'OC-23', 'Classic Gray', '#e0ddd5'], ['Benjamin Moore', 'HC-172', 'Revere Pewter', '#ccc5b5'], ['Benjamin Moore', 'HC-173', 'Edgecomb Gray', '#d7d0c2'],
+  ['Benjamin Moore', 'HC-170', 'Stonington Gray', '#b9bcb8'], ['Benjamin Moore', 'OC-52', 'Gray Owl', '#d3d3cb'], ['Benjamin Moore', 'HC-114', 'Saybrook Sage', '#b3b497'], ['Benjamin Moore', '1495', 'October Mist', '#b6b8a4'],
+  ['Benjamin Moore', 'HC-155', 'Newburyport Blue', '#4a5868'], ['Benjamin Moore', 'HC-154', 'Hale Navy', '#3e4652'], ['Benjamin Moore', 'HC-166', 'Kendall Charcoal', '#5b5a57'], ['Benjamin Moore', '2134-30', 'Iron Mountain', '#4b4845'],
+  ['Benjamin Moore', '2124-10', 'Wrought Iron', '#3f4245'], ['Benjamin Moore', '2128-10', 'Black Beauty', '#2b2b2d'], ['Benjamin Moore', 'AF-290', 'Caliente', '#a8302b'],
+  ['Sherwin-Williams', 'SW 7008', 'Alabaster', '#edeae0'], ['Sherwin-Williams', 'SW 7005', 'Pure White', '#edece6'], ['Sherwin-Williams', 'SW 7029', 'Agreeable Gray', '#d1cbc1'], ['Sherwin-Williams', 'SW 7015', 'Repose Gray', '#ccc9c0'],
+  ['Sherwin-Williams', 'SW 7036', 'Accessible Beige', '#d1c7b8'], ['Sherwin-Williams', 'SW 6204', 'Sea Salt', '#cdd2ca'], ['Sherwin-Williams', 'SW 9130', 'Evergreen Fog', '#95978a'], ['Sherwin-Williams', 'SW 7674', 'Peppercorn', '#585858'],
+  ['Sherwin-Williams', 'SW 7048', 'Urbane Bronze', '#54504a'], ['Sherwin-Williams', 'SW 7069', 'Iron Ore', '#434341'], ['Sherwin-Williams', 'SW 6244', 'Naval', '#2f3d4c'], ['Sherwin-Williams', 'SW 6258', 'Tricorn Black', '#2f2f30'],
+  ['Farrow & Ball', 'No. 229', "Elephant's Breath", '#c9beb2'], ['Farrow & Ball', 'No. 241', 'Skimming Stone', '#d9d1c7'], ['Farrow & Ball', 'No. 25', 'Pigeon', '#9ea59a'], ['Farrow & Ball', 'No. 79', 'Card Room Green', '#6c735d'],
+  ['Farrow & Ball', 'No. 30', 'Hague Blue', '#2f3e46'], ['Farrow & Ball', 'No. 31', 'Railings', '#3d4145']
+];
+const COL_SLOTS = { walls: 'Walls', ceil: 'Ceiling', cab: 'Cabinets' };
+function paintName(hex) { const n = (P.paintNames || {})[String(hex).toLowerCase()]; return n || null; }
+function setColour(r, slot, hex, name) {
+  hex = hex.toLowerCase(); if (name) P.paintNames = { ...(P.paintNames || {}), [hex]: name };
+  if (slot == 'item') { const it = r.items[UI.selItem]; if (it) it.c = hex; }
+  else if (slot == 'walls') { for (const q of partsOf(r)) q.walls = hex; r.walls = hex; } else r[slot] = hex;
+  P.recentCols = [hex, ...(P.recentCols || []).filter(h => h != hex)].slice(0, 12);
+}
+function colourSheet() {
+  const r = cur(); if (!r) return ''; const slot = UI.colSlot || 'walls', q = (UI.colQ || '').toLowerCase(), it = slot == 'item' ? r.items[UI.selItem] : null, curHex = matHex(it ? (it.c || ITEMS[it.k].col) : slot == 'walls' ? r.walls : r[slot] || (slot == 'cab' ? 'cab_white' : 'white'));
+  const list = PAINTS.filter(p => !q || (p.join(' ').toLowerCase().includes(q)));
+  const chip = (hex, label, sub) => `<button class="pchip" data-a="colset" data-v="${hex}" data-n="${esc(label || '')}" style="--c:${hex}"><i></i><span>${esc(label || hex.toUpperCase())}${sub ? `<small>${esc(sub)}</small>` : ''}</span></button>`;
+  return `${it ? `<p><b>${esc(ITEMS[it.k].n)}</b>: colour for this piece</p>` : ''}<div class="chips"${it ? ' hidden' : ''}>${Object.entries(COL_SLOTS).filter(([k]) => k != 'cab' || r.items.some(i => ITEMS[i.k] && ITEMS[i.k].parts.some(p => p[6] == '$cab'))).map(([k, n]) => `<button class="chip${slot == k ? ' on' : ''}" data-a="colslot" data-v="${k}">${n}</button>`).join('')}</div>
+  <div class="row"><button class="btn" data-a="sheet" data-v="room">Back to the ${esc(r.name.toLowerCase())}</button></div><div class="row" style="align-items:center"><span class="pchip big" style="--c:${curHex}"><i></i></span><span><b>${esc(paintName(curHex) || (curHex[0] == '#' ? curHex.toUpperCase() : 'Current finish'))}</b><br><small class="muted">${it ? 'Furniture' : COL_SLOTS[slot]} in the ${esc(r.name.toLowerCase())}</small></span></div>
+  <div class="row"><label class="fld" for="col-any" style="flex:none">Any colour<input type="color" id="col-any" data-f="colany" value="${curHex}" style="height:38px;width:72px;padding:2px"></label><label class="fld" for="col-hex" style="flex:1">Hex code<input id="col-hex" data-f="colhex" placeholder="#3E4652" value=""></label></div>
+  ${(P.recentCols || []).length ? `<h3>Recently used</h3><div class="pchips">${P.recentCols.map(h => chip(h, paintName(h) || '')).join('')}</div>` : ''}
+  <h3>Paint colours</h3><div class="row"><input class="srch" id="col-q" data-f="colq" placeholder="Search name or code, e.g. Hale Navy, SW 7008" value="${esc(UI.colQ || '')}" style="flex:1"></div>
+  <div class="pchips">${list.map(p => chip(p[3], `${p[0]} ${p[2]}`, p[1])).join('') || '<p class="muted">No match. Type the hex code from the paint maker\'s site above.</p>'}</div>
+  <h3>Match a colour from a photo</h3><div class="row">${photoBtn('Pick a photo', 'colour')}</div>${pasteBox('colour')}${UI.colPhoto ? `<div class="pchips">${UI.colPhoto.map(h => chip(h, '', 'from your photo')).join('')}</div>` : ''}
+  <p class="muted">Screen colours are close approximations of the paint makers' chips. Check a real sample on your wall before buying.</p>`;
+}
+async function photoColours(file) { // the main colours in a photo, by a small k-means
+  const s = await shrinkImage(file, 96, .9), im = new Image(); im.src = s.url; await im.decode();
+  const c = document.createElement('canvas'); c.width = im.width; c.height = im.height; const x = c.getContext('2d'); x.drawImage(im, 0, 0); const d = x.getImageData(0, 0, c.width, c.height).data, px = [];
+  for (let i = 0; i < d.length; i += 16) px.push([d[i], d[i + 1], d[i + 2]]);
+  let cs = Array.from({ length: 6 }, (_, i) => px[Math.floor((i + .5) * px.length / 6)].slice());
+  for (let it = 0; it < 8; it++) { const S = cs.map(() => [0, 0, 0, 0]); for (const p of px) { let b = 0, bd = 1e9; cs.forEach((q, j) => { const dd = (p[0] - q[0]) ** 2 + (p[1] - q[1]) ** 2 + (p[2] - q[2]) ** 2; if (dd < bd) { bd = dd; b = j; } }); S[b][0] += p[0]; S[b][1] += p[1]; S[b][2] += p[2]; S[b][3]++; } cs = S.map((s2, j) => s2[3] ? [s2[0] / s2[3], s2[1] / s2[3], s2[2] / s2[3], s2[3]] : [...cs[j].slice(0, 3), 0]); }
+  return cs.sort((a, b) => b[3] - a[3]).map(q => '#' + q.slice(0, 3).map(v => Math.round(v).toString(16).padStart(2, '0')).join(''));
+}
+
+// ---------- Edit directly in 3D: tap furniture, floors, walls and ceilings to select and change them ----------
+function rayBox(o, d, b) { let t0 = -1e9, t1 = 1e9; for (let i = 0; i < 3; i++) { if (Math.abs(d[i]) < 1e-9) { if (o[i] < b[0][i] || o[i] > b[1][i]) return null; continue; } let a = (b[0][i] - o[i]) / d[i], c = (b[1][i] - o[i]) / d[i]; if (a > c) [a, c] = [c, a]; t0 = Math.max(t0, a); t1 = Math.min(t1, c); if (t0 > t1) return null; } return t1 < 0 ? null : Math.max(t0, 0); }
+function pick3D(px, py) {
+  const ry = GLR.ray(px, py), o = ry.o, d = ry.d, inside = G.mode == 'in', lv = inside ? (byId(G.room) || {}).lv : G.mode == 'doll' ? G.lv : null; let best = null;
+  const consider = (t, hit) => { if (t != null && t > .05 && (!best || t < best.t)) best = { t, ...hit }; };
+  const rooms = P.rooms.filter(r => !lv || r.lv == lv || isOut(r));
+  for (const r of rooms) {
+    const fy = floorY(r), ch = isOut(r) ? 3 : (typeof isDouble == 'function' && isDouble(r) ? lvH('M') + .3 + lvH('U') : r.h || lvH(r.lv));
+    r.items.forEach((it, i) => { const D = ITEMS[it.k]; if (!D || D.top && !inside) return; const [w, dp] = itemFoot(it), z = it.z != null ? it.z : D.z || 0, h = D.h || .5;
+      consider(rayBox(o, d, [[r.x + it.x - w / 2, fy + z, r.y + it.y - dp / 2], [r.x + it.x + w / 2, fy + z + Math.max(h, .05), r.y + it.y + dp / 2]]), { kind: 'item', r, i }); });
+    if (Math.abs(d[1]) > 1e-6) { const tf = (fy - o[1]) / d[1], x = o[0] + d[0] * tf, z = o[2] + d[2] * tf; if (x > r.x && x < r.x + r.w && z > r.y && z < r.y + r.d) consider(tf, { kind: 'floor', r }); }
+    if (inside && !isOut(r)) {
+      const cy = fy + ch; if (Math.abs(d[1]) > 1e-6) { const tc = (cy - o[1]) / d[1], x = o[0] + d[0] * tc, z = o[2] + d[2] * tc; if (x > r.x && x < r.x + r.w && z > r.y && z < r.y + r.d) consider(tc, { kind: 'ceil', r }); }
+      for (const [w, ax, c] of [['W', 0, r.x], ['E', 0, r.x + r.w], ['N', 2, r.y], ['S', 2, r.y + r.d]]) { if (Math.abs(d[ax]) < 1e-6) continue; const t = (c - o[ax]) / d[ax], y = o[1] + d[1] * t, u = ax == 0 ? o[2] + d[2] * t : o[0] + d[0] * t, [u0, u1] = ax == 0 ? [r.y, r.y + r.d] : [r.x, r.x + r.w]; if (y > fy && y < cy && u > u0 && u < u1) consider(t, { kind: 'wall', r, w }); }
+    }
+  }
+  return best;
+}
+function edit3DTap(px, py) {
+  const h = pick3D(px, py); UI.e3 = h ? { kind: h.kind, id: h.r.id, i: h.i, w: h.w } : null;
+  if (h) { UI.sel = h.r.id; UI.selItem = h.kind == 'item' ? h.i : null; }
+  render3DEdit(); return !!h;
+}
+function render3DEdit() {
+  const b = $('g3bar'); if (!b) return; const e = UI.e3, on = UI.edit3d;
+  b.hidden = !on; if (!on) return;
+  if (!e || !byId(e.id)) { b.innerHTML = `<div class="meta">Edit mode: tap furniture, a floor, a wall or the ceiling.</div><div class="row"><button class="btn p" data-a="e3off">Done editing</button></div>`; return; }
+  const r = byId(e.id), it = e.kind == 'item' ? r.items[e.i] : null;
+  if (it) { const D = ITEMS[it.k]; b.innerHTML = `<div><b>${esc(D.n)}</b> <span class="meta">in ${esc(r.name)}</span></div><div class="row" style="margin-top:6px"><button class="btn" data-a="e3mv" data-v="l" aria-label="Move left">◀</button><button class="btn" data-a="e3mv" data-v="f" aria-label="Move away">▲</button><button class="btn" data-a="e3mv" data-v="b" aria-label="Move closer">▼</button><button class="btn" data-a="e3mv" data-v="r" aria-label="Move right">▶</button><button class="btn" data-a="itemrot">Rotate</button><button class="btn" data-a="e3col">Colour</button><button class="btn" data-a="sheet" data-v="itemsize">Size</button><button class="btn d" data-a="e3del">Remove</button><button class="btn p" data-a="e3off">Done</button></div>`; return; }
+  const what = { floor: 'Floor', wall: 'Wall', ceil: 'Ceiling' }[e.kind], fin = e.kind == 'floor' ? r.floor : e.kind == 'ceil' ? r.ceil : r.walls, nm = fin && fin[0] == '#' ? (paintName(fin) || fin.toUpperCase()) : (MATS[fin] || ['?'])[0];
+  b.innerHTML = `<div><b>${what} of the ${esc(r.name.toLowerCase())}</b><div class="meta">${esc(nm)}</div></div><div class="row" style="margin-top:6px">${e.kind == 'floor' ? '<button class="btn p" data-a="e3fin">Change the floor</button>' : `<button class="btn p" data-a="e3paint" data-v="${e.kind == 'ceil' ? 'ceil' : 'walls'}">Paint colour</button><button class="btn" data-a="e3fin">All finishes</button>`}<button class="btn" data-a="e3room">Room settings</button><button class="btn" data-a="e3off">Done</button></div>`;
+}
+function e3Move(dir) { // move along the floor, relative to where you are looking
+  const e = UI.e3, r = e && byId(e.id), it = r && r.items[e.i]; if (!it) return; const yaw = GLR.cam.yaw, fx = -Math.sin(yaw), fz = -Math.cos(yaw);
+  const v = { f: [fx, fz], b: [-fx, -fz], l: [fz, -fx], r: [-fz, fx] }[dir], ax = Math.abs(v[0]) > Math.abs(v[1]) ? [Math.sign(v[0]) * .1, 0] : [0, Math.sign(v[1]) * .1];
+  const [w, dp] = itemFoot(it); it.x = r2(clamp(it.x + ax[0], w / 2, r.w - w / 2)); it.y = r2(clamp(it.y + ax[1], dp / 2, r.d - dp / 2)); UI.lastAct = 'moveitem'; commit(); GLR.req();
+}
+
+// ---------- Household profile, must-haves, splurge/save priorities, My items, My style, likes ----------
+const HOBBIES = [['piano', 'Piano or music'], ['gaming', 'Gaming or streaming'], ['theatre', 'Movies, home theatre'], ['gym', 'Home gym'], ['workshop', 'Workshop, tools'], ['crafts', 'Crafts or sewing'], ['reading', 'Reading nook'], ['cooking', 'Serious cooking'], ['entertain', 'Entertaining'], ['garden', 'Gardening'], ['yoga', 'Yoga or meditation'], ['gear', 'Bikes, skis, outdoor gear']];
+function prof() { return Object.assign({ adults: 2, kids: 0, seniors: 0, dogs: 0, cats: 0, hobbies: [], wfh: 0, aging: false, guests: 'sometimes', cars: 2, ev: false, notes: '' }, P.profile || {}); }
+const PRIO = { save: ['Save', .75], std: ['Standard', 1], splurge: ['Splurge', 1.4] };
+const prioOf = r => PRIO[(r && r.prio) || 'std'] ? (r.prio || 'std') : 'std';
+// --- what the household needs from the house
+function profileNeeds() {
+  const p = prof(), IN = indoor(), M = indoor('M'), has = t => IN.some(r => r.type == t), out = [], add = (ok, t, d, fix) => out.push({ ok, t, d, fix });
+  const beds = IN.filter(r => T(r).bed && !r.part).length, need = Math.max(1, (p.adults > 1 ? 1 : p.adults) + p.kids + p.seniors + (p.guests == 'often' ? 1 : 0));
+  add(beds >= need, `${beds} bedrooms for ${p.adults} adult${p.adults == 1 ? '' : 's'}${p.kids ? `, ${p.kids} kid${p.kids > 1 ? 's' : ''}` : ''}${p.seniors ? `, ${p.seniors} senior${p.seniors > 1 ? 's' : ''}` : ''}${p.guests == 'often' ? ' and frequent guests' : ''}`, beds >= need ? '' : `About ${need} needed.`);
+  const offices = IN.filter(r => r.type == 'office').length; if (p.wfh) add(offices >= p.wfh, `${p.wfh} working from home: ${offices} office${offices == 1 ? '' : 's'}`, 'A door that closes and a window for video calls; place it away from the kitchen and the theatre.');
+  const gar = IN.find(r => r.type == 'garage'), cap = gar ? Math.floor((gar.w + .2) / 3) : 0; if (p.cars) add(cap >= p.cars, `${p.cars} car${p.cars > 1 ? 's' : ''}: garage fits ${cap}`, cap >= p.cars ? '' : 'About 3 m (10 ft) of garage width per car.');
+  if (p.ev) add((P.tech || []).includes('ev'), 'EV charging', 'A 60 A circuit to the garage for a 48 A charger.', 'ev');
+  if (p.dogs) { const mud = IN.find(r => r.type == 'mudroom'), wash = IN.some(r => r.items.some(i => i.k == 'dog_wash')) || zones().some(z => z.items.some(i => i.k == 'outdoor_shower')); add(!!mud && wash, `${p.dogs} dog${p.dogs > 1 ? 's' : ''}: mudroom with a dog wash`, mud ? 'A raised dog wash beside the back door saves the bathroom.' : 'A mudroom between the garage or back door and the house.', mud && !wash ? 'dogwash' : null); const fence = zones().some(z => ['yard', 'garden'].includes(z.type) && z.fence && z.fh > 0); add(fence, 'Fenced yard for the dog', 'Fence the backyard (Outside step, yard, fence height).'); }
+  if (p.cats) add(IN.some(r => ['laundry', 'mudroom'].includes(r.type)), 'A spot for the litter box', 'Laundry or mudroom with an exhaust fan.');
+  const hob = new Set(p.hobbies);
+  if (hob.has('piano')) { const pr = IN.find(r => r.items.some(i => i.k == 'piano')); add(!!pr, 'A place for the piano', pr ? `In the ${pr.name.toLowerCase()}. Keep it on an inside wall, away from windows, heat vents and the fireplace.` : 'An inside wall in the living room, family room or office, away from windows and heat.', pr ? null : 'piano'); }
+  if (hob.has('theatre')) add(has('theater'), 'Home theatre', 'A windowless basement room is ideal; add sound insulation and a dedicated circuit.');
+  if (hob.has('gym')) { const g = IN.find(r => r.type == 'gym'); add(!!g && (g.h || lvH(g.lv)) >= 2.6, 'Home gym', g ? `Ceiling ${fL(g.h || lvH(g.lv))}; 2.6 m (8'6") or more for overhead lifts, rubber floor, a fan.` : 'A basement room with rubber flooring and good air.'); }
+  if (hob.has('gaming')) { const o = IN.find(r => ['office', 'rec', 'family', 'den'].includes(r.type)); add(!!o, 'Gaming or streaming setup', o ? `In the ${o.name.toLowerCase()}: wired ethernet, a dedicated circuit, acoustic panels, no window behind the screen.` : 'An office or rec room.'); }
+  if (hob.has('workshop')) add(has('workshop') || (gar && gar.w >= 7.5), 'Workshop space', 'A workshop room or a garage bay with a 240 V circuit and dust collection.');
+  if (hob.has('cooking')) add(has('pantry') && IN.some(r => r.type == 'kitchen' && r.items.some(i => i.k == 'island')), 'Serious kitchen: pantry and island', 'A walk-in pantry and an island; consider a 36" range and a second sink.');
+  if (hob.has('entertain')) add(IN.some(r => /dining/.test(r.type) || /dining/i.test(r.name)) && zones().some(z => ['deck', 'patio'].includes(z.type)), 'Room to entertain', 'Open kitchen to dining, and a deck or patio off it.');
+  if (hob.has('garden')) add(zones().some(z => z.type == 'garden' || z.items.some(i => /raised_beds|greenhouse/.test(i.k))), 'A garden', 'Raised beds or a garden zone on the sunny side.');
+  if (hob.has('reading')) add(IN.some(r => r.items.some(i => /windowseat|bookcase/.test(i.k) || (i.k.startsWith('cu_') && P.custom && P.custom[i.k] && ['windowseat', 'bookcase'].includes(P.custom[i.k].type)))), 'A reading nook', 'A window seat or bookcase wall (Furnish → built-ins).');
+  if (hob.has('gear')) add(has('mudroom') || (gar && gar.d >= 7), 'Storage for outdoor gear', 'A deep garage or mudroom lockers with hooks and a boot tray.');
+  if (p.aging || p.seniors) { const pb = M.some(r => r.type == 'primary' || (T(r).bed && r.type == 'bedroom')) && M.some(r => ['bathroom', 'ensuite'].includes(r.type)); add(pb, 'One-level living: a bedroom and full bath on the main floor', 'So stairs are never required day to day.'); add(true, 'Aging in place details', 'Curbless shower with blocking for grab bars, 900 mm (36") doors, lever handles, one step-free entrance.'); }
+  return out;
+}
+function profileBrief() { // a short note for Claude in every chat
+  const p = prof(), parts = [`Household: ${p.adults} adult${p.adults == 1 ? '' : 's'}${p.kids ? `, ${p.kids} kid${p.kids > 1 ? 's' : ''}` : ''}${p.seniors ? `, ${p.seniors} senior${p.seniors > 1 ? 's' : ''}` : ''}${p.dogs ? `, ${p.dogs} dog${p.dogs > 1 ? 's' : ''}` : ''}${p.cats ? `, ${p.cats} cat${p.cats > 1 ? 's' : ''}` : ''}.`];
+  if (p.hobbies.length) parts.push('Interests: ' + p.hobbies.map(h => (HOBBIES.find(x => x[0] == h) || [0, h])[1].toLowerCase()).join(', ') + '.'); if (p.wfh) parts.push(`${p.wfh} work${p.wfh == 1 ? 's' : ''} from home.`); if (p.aging) parts.push('Plans to age in place.'); if (p.notes) parts.push('Notes: ' + p.notes);
+  const musts = (P.musts || []).map(m => mustText(m)); if (musts.length) parts.push('Must-haves: ' + musts.join('; ') + '.');
+  if (P.myStyle) parts.push(`Owner's saved style: walls ${matLabel(P.myStyle.walls)}, floor ${matLabel(P.myStyle.floor)}${P.myStyle.cab ? ', cabinets ' + matLabel(P.myStyle.cab) : ''}.`);
+  const L = (P.likes || []).filter(l => l.up).slice(-6), D = (P.likes || []).filter(l => !l.up).slice(-6);
+  if (L.length) parts.push('Liked renders: ' + L.map(l => l.desc).join(' | ') + '.'); if (D.length) parts.push('Disliked renders: ' + D.map(l => l.desc).join(' | ') + '.');
+  return parts.join(' ');
+}
+const matLabel = k => !k ? 'default' : k[0] == '#' ? (paintName(k) || 'paint ' + k) : (MATS[k] || [k])[0];
+// --- must-haves
+const MUST_KINDS = [['room', 'A room of this kind'], ['beds', 'Bedrooms, at least'], ['baths', 'Bathrooms, at least'], ['cars', 'Garage for cars, at least'], ['areaMax', 'Size, at most (above grade)'], ['areaMin', 'Size, at least (above grade)'], ['budget', 'Budget, at most'], ['tier', 'Energy tier, at least'], ['mainPrimary', 'Primary bedroom on the main floor'], ['walkout', 'Walk-out basement'], ['text', 'Something else (I tick it myself)']];
+function mustText(m) { const n = { room: () => (TYPES[m.v] || { n: m.v }).n, beds: () => `${m.v}+ bedrooms`, baths: () => `${m.v}+ bathrooms`, cars: () => `${m.v}-car garage`, areaMax: () => `at most ${fA(m.v)}`, areaMin: () => `at least ${fA(m.v)}`, budget: () => `under ${fMoney(m.v)}`, tier: () => `energy Tier ${m.v}+`, mainPrimary: () => 'primary bedroom on the main floor', walkout: () => 'walk-out basement', text: () => m.v }[m.k]; return n ? n() : m.k; }
+function mustOK(m) {
+  const IN = indoor(), area = areaOf('M') + areaOf('U') - IN.filter(r => r.type == 'garage').reduce((s, r) => s + r.w * r.d, 0), gar = IN.find(r => r.type == 'garage');
+  switch (m.k) {
+    case 'room': return IN.some(r => r.type == m.v) || zones().some(z => z.type == m.v);
+    case 'beds': return IN.filter(r => T(r).bed && !r.part).length >= +m.v;
+    case 'baths': return IN.filter(r => T(r).wet && !r.part).length >= +m.v;
+    case 'cars': return gar ? Math.floor((gar.w + .2) / 3) >= +m.v : false;
+    case 'areaMax': return area <= +m.v; case 'areaMin': return area >= +m.v;
+    case 'budget': try { return estimate().hi <= +m.v || (typeof itemized == 'function' && itemized().total <= +m.v); } catch (e) { return true; }
+    case 'tier': try { return energySummary().tier >= +m.v; } catch (e) { return true; }
+    case 'mainPrimary': return indoor('M').some(r => r.type == 'primary');
+    case 'walkout': return !!siteCfg().walkout && indoor('B').length > 0;
+    case 'text': return !!m.done;
+  }
+  return true;
+}
+function mustChecks(add) { for (const m of P.musts || []) if (!mustOK(m)) add('warn', 'Must-haves', `Must-have missing: ${mustText(m)}`, m.k == 'text' ? 'Tick it in Your household when it is in the design.' : 'Open Your household to see what it needs.', 'Your must-haves'); }
+// --- My items: your own furniture with real sizes, built on the closest catalogue model
+function myRegister() { for (const [k, m] of Object.entries(P.myItems || {})) { const b = ITEMS[m.base] || ITEMS.sofa || Object.values(ITEMS)[0]; ITEMS[k] = { ...b, n: m.n, c: 'My items', w: m.w, d: m.d, h: m.h, col: m.col || b.col, mine: 1 }; } }
+function regAll() { biRegister(); myRegister(); }
+function myItemSheet() {
+  const e = UI.myEdit && (P.myItems || {})[UI.myEdit], cats = {}; for (const [k, i] of Object.entries(ITEMS)) if (!i.mine && !k.startsWith('cu_') && !['Lighting'].includes(i.c)) (cats[i.c] = cats[i.c] || []).push([k, i.n]);
+  return `<p class="muted">Add a piece you own or plan to buy, with its real size, so you can test that it fits. Pick the catalogue item it looks most like; the 3D model is stretched to your size.</p>
+  <div class="row">${fld('Name', 'mi-n', 'none', e ? e.n : '', 'placeholder="e.g. Yamaha upright piano"')}</div>
+  <div class="row"><label class="fld" for="mi-b" style="flex:1">Looks like<select id="mi-b">${Object.entries(cats).map(([c, l]) => `<optgroup label="${esc(c)}">${l.map(([k, n]) => `<option value="${k}"${(e ? e.base : 'piano') == k ? ' selected' : ''}>${esc(n)}</option>`).join('')}</optgroup>`).join('')}</select></label></div>
+  <div class="row">${num(`Width (${U()})`, 'mi-w', 'none', e ? toU(e.w) : '', 'min="0"')}${num(`Depth (${U()})`, 'mi-d', 'none', e ? toU(e.d) : '', 'min="0"')}${num(`Height (${U()})`, 'mi-h', 'none', e ? toU(e.h) : '', 'min="0"')}</div>
+  <div class="row"><label class="fld" for="mi-c" style="flex:none">Colour<input type="color" id="mi-c" value="${e && e.col && e.col[0] == '#' ? e.col : '#3a3a3a'}" style="height:38px;width:72px;padding:2px"></label><label class="fld" style="flex:1"><span>Use the catalogue colour</span><input type="checkbox" id="mi-cc"${!e || !e.col || e.col[0] != '#' ? ' checked' : ''}></label></div>
+  <div class="row"><button class="btn p" data-a="mysave">${e ? 'Save changes' : 'Save and add to this room'}</button>${e ? '<button class="btn d" data-a="mydel">Delete this item</button>' : ''}</div>
+  ${Object.keys(P.myItems || {}).length ? `<h3>My items</h3>${Object.entries(P.myItems).map(([k, m]) => `<div class="chk" style="--c:var(--accent)"><div><b>${esc(m.n)}</b><p>${fL(m.w)} × ${fL(m.d)} × ${fL(m.h)}</p></div><div class="row" style="flex-direction:column;gap:4px">${cur() ? `<button class="btn" data-a="additem" data-k="${k}">Add here</button>` : ''}<button class="btn" data-a="myedit" data-v="${k}">Edit</button></div></div>`).join('')}` : ''}`;
+}
+// --- My style and likes
+const STYLE_KEYS = ['walls', 'floor', 'ceil', 'cab', 'ctr', 'lk', 'lb'];
+function saveMyStyle(r) { P.myStyle = { from: r.name }; for (const k of STYLE_KEYS) if (r[k] != null) P.myStyle[k] = r[k]; }
+function applyMyStyle(r) { const S = P.myStyle; if (!S) return; for (const k of STYLE_KEYS) if (S[k] != null && !(k == 'floor' && (T(r).wet || isOut(r)) && !/tile|stone|slate|vinyl|concrete/.test(S[k]))) { if (k == 'walls') for (const q of partsOf(r)) q.walls = S.walls; if ((k == 'cab' || k == 'ctr') && !r.items.some(i => ITEMS[i.k] && ITEMS[i.k].parts.some(p => p[6] == '$' + k))) continue; r[k] = S[k]; } }
+function likePhoto(i, up) {
+  const s = photosList()[i]; if (!s) return; const r = P.rooms.find(q => q.name == s.room || q.id == s.room) || null;
+  const desc = r ? `${r.name}: ${r.style ? (ROOM_STYLES[r.style] || { n: r.style }).n + ' style, ' : ''}walls ${matLabel(r.walls)}, floor ${matLabel(r.floor)}${r.cab ? ', cabinets ' + matLabel(r.cab) : ''}` : s.title;
+  P.likes = [...(P.likes || []).filter(l => l.photo != (s.id || s.title)), { photo: s.id || s.title, up, desc, at: Date.now() }].slice(-30);
+}
+function householdSheet() {
+  const p = prof(), N = profileNeeds(), ok = N.filter(x => x.ok).length, nb = (k, l, v, mx = 9) => `<label class="fld" for="hh-${k}" style="flex:1">${l}<select id="hh-${k}" data-f="hh" data-k="${k}">${Array.from({ length: mx + 1 }, (_, i) => `<option value="${i}"${v == i ? ' selected' : ''}>${i}</option>`).join('')}</select></label>`;
+  const musts = P.musts || [];
+  return `<p class="muted">Tell the app who the house is for. It checks the design against your household and must-haves, and every Claude chat sees this so suggestions fit your life.</p>
+  <h3>Who lives here</h3><div class="row">${nb('adults', 'Adults', p.adults, 6)}${nb('kids', 'Kids', p.kids)}${nb('seniors', 'Seniors', p.seniors, 4)}</div><div class="row">${nb('dogs', 'Dogs', p.dogs, 5)}${nb('cats', 'Cats', p.cats, 5)}${nb('wfh', 'Work from home', p.wfh, 4)}${nb('cars', 'Cars', p.cars, 5)}</div>
+  <div class="row"><label class="fld" for="hh-guests" style="flex:1">Overnight guests<select id="hh-guests" data-f="hh" data-k="guests">${[['rarely', 'Rarely'], ['sometimes', 'A few times a year'], ['often', 'Often']].map(([k, n]) => `<option value="${k}"${p.guests == k ? ' selected' : ''}>${n}</option>`).join('')}</select></label></div>
+  <div class="chips"><button class="chip${p.ev ? ' on' : ''}" data-a="hhtog" data-v="ev">Electric car</button><button class="chip${p.aging ? ' on' : ''}" data-a="hhtog" data-v="aging">Plan to age in place</button></div>
+  <h3>Interests</h3><div class="chips">${HOBBIES.map(([k, n]) => `<button class="chip${p.hobbies.includes(k) ? ' on' : ''}" data-a="hhhob" data-v="${k}">${n}</button>`).join('')}</div>
+  <div class="row"><label class="fld" for="hh-notes" style="flex:1">Anything else about how you live<textarea id="hh-notes" data-f="hhnotes" rows="2" placeholder="e.g. early riser, loves morning sun in the kitchen; hates clutter at the entry">${esc(p.notes)}</textarea></label></div>
+  <h3>How the design fits · ${ok} of ${N.length}</h3>${N.map(x => `<div class="chk" style="--c:var(--${x.ok ? 'ok' : 'warn'})"><div><b>${x.ok ? '✓ ' : ''}${esc(x.t)}</b>${x.d ? `<p>${esc(x.d)}</p>` : ''}</div>${!x.ok && x.fix ? `<button class="btn p" data-a="hhfix" data-v="${x.fix}">${{ dogwash: 'Add a dog wash', piano: 'Add a piano', ev: 'Add EV charging' }[x.fix]}</button>` : ''}</div>`).join('')}
+  <h3>Must-haves</h3><p class="muted">Your non-negotiables. They stay ticked while the design keeps them, and the Check step flags it when a change breaks one.</p>
+  ${musts.map((m, i) => { const okk = mustOK(m); return `<div class="chk" style="--c:var(--${okk ? 'ok' : 'warn'})"><div><b>${okk ? '✓ ' : ''}${esc(mustText(m))}</b>${okk ? '' : '<p>Not in the design right now.</p>'}</div><div class="row" style="flex-direction:column;gap:4px">${m.k == 'text' ? `<button class="btn" data-a="musttick" data-v="${i}">${m.done ? 'Untick' : 'It is in'}</button>` : ''}<button class="btn" data-a="mustdel" data-v="${i}">Remove</button></div></div>`; }).join('')}
+  <div class="row"><label class="fld" for="mu-k" style="flex:1">Add a must-have<select id="mu-k" data-f="mustk">${MUST_KINDS.map(([k, n]) => `<option value="${k}"${UI.mustK == k ? ' selected' : ''}>${n}</option>`).join('')}</select></label></div>
+  <div class="row">${(() => { const k = UI.mustK || 'room'; if (k == 'room') return `<label class="fld" for="mu-v" style="flex:1">Room<select id="mu-v">${Object.entries(TYPES).filter(([t, d]) => !d.out || ['deck', 'patio', 'garden'].includes(t)).map(([t, d]) => `<option value="${t}">${esc(d.n)}</option>`).join('')}</select></label>`; if (['mainPrimary', 'walkout'].includes(k)) return '<input id="mu-v" type="hidden" value="1">'; if (k == 'text') return fld('What', 'mu-v', 'none', '', 'placeholder="e.g. a window over the kitchen sink"'); return num(k == 'budget' ? 'Dollars' : k.startsWith('area') ? `Area (${P.units == 'm' ? 'm²' : 'sq ft'})` : 'Number', 'mu-v', 'none', '', 'min="0"'); })()}<button class="btn p" data-a="mustadd" style="align-self:end">Add</button></div>`;
 }
 
 // ---------- Curved parts for furniture: smooth-shaded meshes in item-local metres (x across, y deep, z up) ----------
@@ -5362,7 +5550,7 @@ function loadProject(obj) {
   const b = blankProject();
   P = Object.assign(b, obj); P.lot = Object.assign(blankProject().lot, obj.lot); P.zoning = Object.assign(blankProject().zoning, obj.zoning); P.ext = Object.assign(blankProject().ext, obj.ext);
   P.lv = Object.assign(blankProject().lv, obj.lv); P.rooms = (obj.rooms || []).filter(r => r && TYPES[r.type]).map(r => Object.assign({ items: [], doors: [], wins: [], feat: [], notes: '' }, r));
-  P.custom = obj.custom && typeof obj.custom == 'object' ? Object.fromEntries(Object.entries(obj.custom).filter(([k, v]) => /^cu_\w+$/.test(k) && v && BI[v.type]).map(([k, v]) => [k, { type: v.type, p: biClean(v.type, v.p) }])) : {}; biRegister();
+  P.myItems = obj.myItems && typeof obj.myItems == 'object' ? obj.myItems : {}; P.custom = obj.custom && typeof obj.custom == 'object' ? Object.fromEntries(Object.entries(obj.custom).filter(([k, v]) => /^cu_\w+$/.test(k) && v && BI[v.type]).map(([k, v]) => [k, { type: v.type, p: biClean(v.type, v.p) }])) : {}; regAll();
   for (const r of P.rooms) r.items = r.items.filter(i => ITEMS[i.k]);
   P.versions = Array.isArray(obj.versions) ? obj.versions.filter(v => v && typeof v.id == 'string' && (typeof v.asset == 'string' || typeof v.data == 'string')).slice(0, 30) : [];
   P.photos = Array.isArray(obj.photos) ? obj.photos.filter(p => p && typeof p.id == 'string').slice(0, 80) : [];
@@ -5412,14 +5600,15 @@ function renderPlan(full) {
   });
 }
 function renderSel() {
-  const b = $('selbar'), r = UI.sel && byId(UI.sel), show = r && !UI.sheet;
+  const b = $('selbar'), r = UI.sel && byId(UI.sel), show = (r || UI.multi) && !UI.sheet;
   b.classList.toggle('on', !!show); $('fab').style.display = show || UI.sheet ? 'none' : '';
   if (!show) return;
+  if (UI.multi) { const n = UI.multi.size; b.innerHTML = `<div><b>${n} selected</b><div class="meta">Tap rooms to add or remove them. Drag any selected room to move them all.</div></div><div class="row" style="margin-top:6px"><button class="btn" data-a="mall">All on this floor</button><button class="btn" data-a="malign" data-v="x"${n > 1 ? '' : ' disabled'}>Align left</button><button class="btn" data-a="malign" data-v="y"${n > 1 ? '' : ' disabled'}>Align top</button><button class="btn" data-a="mcopy"${n ? '' : ' disabled'}>Copy</button><button class="btn" data-a="mdup"${n ? '' : ' disabled'}>Duplicate</button>${UI.clip ? '<button class="btn" data-a="mpaste">Paste</button>' : ''}<button class="btn d" data-a="mdel"${n ? '' : ' disabled'}>Delete</button><button class="btn p" data-a="mdone">Done</button></div>`; return; }
   if (UI.selItem != null && r.items[UI.selItem]) {
     const it = r.items[UI.selItem];
-    b.innerHTML = `<div class="row"><div style="flex:1;min-width:0"><b>${esc(ITEMS[it.k].n)}</b><div class="meta">in ${esc(r.name)}. Drag to move.</div></div>${it.k.startsWith('cu_') ? '<button class="btn" data-a="biedit">Edit</button>' : ''}<button class="btn" data-a="itemrot">Rotate</button><button class="btn d" data-a="itemdel">Remove</button><button class="btn p" data-a="itemdone">Done</button></div>`;
+    b.innerHTML = `<div class="row"><div style="flex:1;min-width:0"><b>${esc(ITEMS[it.k].n)}</b><div class="meta">in ${esc(r.name)}. Drag to move.</div></div>${it.k.startsWith('cu_') ? '<button class="btn" data-a="biedit">Edit</button>' : ''}<button class="btn" data-a="sheet" data-v="itemsize">Size</button><button class="btn" data-a="itemrot">Rotate</button><button class="btn d" data-a="itemdel">Remove</button><button class="btn p" data-a="itemdone">Done</button></div>`;
   } else {
-    b.innerHTML = `<div class="row"><div style="flex:1;min-width:120px"><b>${esc(r.name)}</b><div class="meta">${r.part ? 'Wing of ' + esc(rootOf(r).name) + ' · ' : ''}${fL(r.w)} × ${fL(r.d)} · ${fA(r.w * r.d)}${!r.part && !isOut(r) && partsOf(r).length ? ' · ' + fA(groupOf(r).reduce((s, q) => s + q.w * q.d, 0)) + ' with wings' : ''}</div></div><button class="btn p" data-a="edit">Edit</button><button class="btn" data-a="to3d">${isOut(r) ? '3D' : 'Step inside'}</button>${isOut(r) ? '<button class="btn" data-a="dup">Copy</button>' : '<button class="btn" data-a="wing">Add wing</button>'}<button class="btn d" data-a="del">Delete</button></div>`;
+    b.innerHTML = `<div class="row"><div style="flex:1;min-width:120px"><b>${esc(r.name)}</b><div class="meta">${r.part ? 'Wing of ' + esc(rootOf(r).name) + ' · ' : ''}${fL(r.w)} × ${fL(r.d)} · ${fA(r.w * r.d)}${!r.part && !isOut(r) && partsOf(r).length ? ' · ' + fA(groupOf(r).reduce((s, q) => s + q.w * q.d, 0)) + ' with wings' : ''}</div></div><button class="btn p" data-a="edit">Edit</button><button class="btn" data-a="mstart">Select more</button><button class="btn" data-a="to3d">${isOut(r) ? '3D' : 'Step inside'}</button>${isOut(r) ? '<button class="btn" data-a="dup">Copy</button>' : '<button class="btn" data-a="wing">Add wing</button>'}<button class="btn d" data-a="del">Delete</button></div>`;
   }
 }
 function fixOpenings(r) {
@@ -5443,6 +5632,8 @@ function initPlan() {
     const ds = e.target.dataset || {}, [wx, wy] = planPt(e), r = UI.sel && byId(UI.sel);
     drag = { sx: e.clientX, sy: e.clientY, wx, wy, moved: false, kind: 'pan', vb: { ...VB[UI.lv] }, ds: { ...ds } };
     if (UI.lotMode) { if (UI.lotMode == 'move' && P.site && P.site.under) { drag.kind = 'under'; drag.o = { x: P.site.under.x, y: P.site.under.y }; } return; }
+    if (UI.multi && ds.r && UI.multi.has(ds.r)) { drag.kind = 'group'; drag.os = [...UI.multi].map(byId).filter(Boolean).flatMap(q => [q, ...partsOf(q)]).filter((q, i, a) => a.indexOf(q) == i).map(q => ({ q, x: q.x, y: q.y })); return; }
+    if (UI.multi) return;
     if (ds.h && r) { drag.kind = 'size'; drag.o = { w: r.w, d: r.d }; drag.sn = snapList(r); }
     else if (ds.i != null && r && UI.selItem === +ds.i) { drag.kind = 'item'; drag.idx = +ds.i; drag.o = { x: r.items[+ds.i].x, y: r.items[+ds.i].y }; }
     else if (r && (ds.i != null || ds.r == UI.sel)) { drag.kind = 'room'; drag.o = { x: r.x, y: r.y }; drag.sn = snapList(r); }
@@ -5461,6 +5652,7 @@ function initPlan() {
     if (!drag.moved && Math.hypot(dx, dy) < 6) return; drag.moved = true;
     const r = UI.sel && byId(UI.sel), wdx = dx / ppm, wdy = dy / ppm;
     if (drag.kind == 'pan') { v.x = drag.vb.x - wdx; v.y = drag.vb.y - wdy; }
+    else if (drag.kind == 'group') { const g = P.units == 'm' ? .1 : .1524, dx = Math.round(wdx / g) * g, dy = Math.round(wdy / g) * g; for (const o of drag.os) { o.q.x = r2(o.x + dx); o.q.y = r2(o.y + dy); } }
     else if (drag.kind == 'under') { P.site.under.x = r2(drag.o.x + wdx); P.site.under.y = r2(drag.o.y + wdy); }
     else if (drag.kind == 'room') { if (!drag.wings) drag.wings = partsOf(r).map(q => ({ q, x: q.x, y: q.y })); r.x = snap1(drag.o.x + wdx, drag.sn.xs, [0, r.w]); r.y = snap1(drag.o.y + wdy, drag.sn.ys, [0, r.d]); for (const g of drag.wings) { g.q.x = r2(g.x + r.x - drag.o.x); g.q.y = r2(g.y + r.y - drag.o.y); } }
     else if (drag.kind == 'size') { const mn = isOut(r) ? .6 : .9; r.w = Math.max(mn, r2(snap1(r.x + drag.o.w + wdx, drag.sn.xs, [0]) - r.x)); r.d = Math.max(mn, r2(snap1(r.y + drag.o.d + wdy, drag.sn.ys, [0]) - r.y)); fixOpenings(r); renderSel(); }
@@ -5471,6 +5663,7 @@ function initPlan() {
     if (!ptrs.has(e.pointerId)) return; ptrs.delete(e.pointerId);
     if (pinch) { if (ptrs.size < 2) pinch = null; return; }
     const d = drag; drag = null; if (!d) return;
+    if (!d.moved && UI.multi) { const id = d.ds.r; if (id) { const q = rootOf(byId(id)) || byId(id); UI.multi.has(q.id) ? UI.multi.delete(q.id) : UI.multi.add(q.id); } renderSel(); renderPlan(); return; }
     if (!d.moved && UI.lotMode) { if (UI.lotMode != 'move') lotTap(d.wx, d.wy); return; }
     if (!d.moved) {
       if (d.ds.i != null && UI.sel) UI.selItem = +d.ds.i;
@@ -5527,6 +5720,9 @@ function renderSheet() {
       <div class="row">${fld('Name', 'f-name', 'rname', r.name, 'type="text" maxlength="40"')}${out ? '' : selc('Level', 'f-lv', 'rlv', LORD.map(l => [l, LNAME[l]]), r.lv)}</div>
       ${out ? '' : `<div class="row">${selc('Ceiling', 'f-ct', 'rceil', CEIL_TYPES.filter(c => c[0] != 'double' || (r.lv == 'M' && !r.part)), r.ct || 'flat')}${selc('Angled corner', 'f-ch', 'rcham', [['', 'None'], ['NE', 'North-east'], ['NW', 'North-west'], ['SE', 'South-east'], ['SW', 'South-west']], (r.cham && r.cham.c) || '')}${r.cham ? num(`Corner size (${U()})`, 'f-chs', 'rchams', toU(r.cham.s)) : ''}${r.lv == 'U' && voidIvAll(r) ? selc('Side facing the two-storey space', 'f-ov', 'rover', [['0', 'Solid wall'], ['1', 'Open with a railing']], r.overlook ? '1' : '0') : ''}</div>`}
       <div class="row">${num(`Width, east-west (${U()})`, 'f-w', 'rw', toU(r.w))}${num(`Depth, north-south (${U()})`, 'f-d', 'rd', toU(r.d))}${out ? '' : num(`Ceiling (${U()})`, 'f-h', 'rh', toU(r.h))}</div>
+      ${out ? '' : `<div class="row" style="align-items:center"><span class="muted" style="font-size:13px">Budget priority:</span><span class="chips" style="margin:0">${Object.entries(PRIO).map(([k, p]) => `<button class="chip${prioOf(r) == k ? ' on' : ''}" data-a="rprio" data-v="${k}">${p[0]}</button>`).join('')}</span></div>`}
+      <div class="row" style="align-items:center"><span class="muted" style="font-size:13px">When the size changes, keep fixed:</span><span class="chips" style="margin:0">${[['W', 'Left side'], ['C', 'Centre'], ['E', 'Right side']].map(([k, n]) => `<button class="chip${(UI.anX || 'W') == k ? ' on' : ''}" data-a="anchor" data-k="x" data-v="${k}">${n}</button>`).join('')}</span><span class="chips" style="margin:0">${[['N', 'Top'], ['C', 'Middle'], ['S', 'Bottom']].map(([k, n]) => `<button class="chip${(UI.anY || 'N') == k ? ' on' : ''}" data-a="anchor" data-k="y" data-v="${k}">${n}</button>`).join('')}</span></div>
+      <div class="row">${num(`From the left lot line (${U()})`, 'f-x', 'rx', toU(r.x - P.lot.x))}${num(`From the back lot line (${U()})`, 'f-y', 'ry', toU(r.y - P.lot.y))}</div>
       ${out ? '' : `<div class="card row"><p class="muted" style="flex:1;min-width:160px">${r.part ? 'This is a wing of ' + esc(rootOf(r).name) + '. The wall between them is left open.' : 'Shape: add a wing to make this room L, T or U shaped. Drag and resize the wing like any room.'}</p>${r.part ? '<button class="btn" data-a="unwing">Make it a separate room</button>' : '<button class="btn" data-a="wing">Add wing</button>'}<button class="btn" data-a="dup">Copy room</button></div>`}
       ${t.stair ? `<div class="row">${selc('Stair climbs toward', 'f-dir', 'rdir', [['N', 'North'], ['S', 'South'], ['E', 'East'], ['W', 'West']], stairInfo(r).dir)}<span class="muted" style="flex:2">${(() => { const s = stairInfo(r); return `${s.n} risers of ${Math.round(s.rise * 1000)} mm, run ${Math.round(s.run * 1000)} mm`; })()}</span></div>` : ''}
       ${r.type == 'deck' ? `<div class="row">${num(`Deck height above grade (${U()})`, 'f-elev', 'relev', toU(zoneY(r)))}</div>` : ''}
@@ -5534,6 +5730,7 @@ function renderSheet() {
     } else if (UI.tab == 'style') {
       const mb = moodBoard(r), sw = styleWords(r);
       h += `<p class="muted">One tap sets the finishes, cabinets, furniture colours and lighting tone, and adds decor where there is room. Fine-tune afterwards in Finishes and Furnish.</p>${CAP.imgs ? '<div class="row">' + photoBtn('Match a photo I love', 'stylechat', 'btn p') + '</div>' : ''}
+      <div class="card"><b>My style</b>${P.myStyle ? `<p class="muted" style="margin:.3em 0">Saved from the ${esc((P.myStyle.from || '').toLowerCase())}: walls ${esc(matLabel(P.myStyle.walls))}, floor ${esc(matLabel(P.myStyle.floor))}.</p>` : '<p class="muted" style="margin:.3em 0">Save a room you love and apply its look anywhere.</p>'}<div class="row">${P.myStyle ? '<button class="btn p" data-a="myapply">Apply here</button><button class="btn" data-a="myapplyall">Apply to every room</button>' : ''}<button class="btn" data-a="mystylesave">Save this room as My style</button></div>${(P.likes || []).length ? `<p class="muted" style="margin:.3em 0 0">${P.likes.filter(l => l.up).length} renders liked, ${P.likes.filter(l => !l.up).length} disliked. Claude takes them into account.</p>` : ''}</div>
       <div class="stylegrid">${Object.entries(ROOM_STYLES).map(([k, S]) => `<button class="stl${r.style == k ? ' on' : ''}" data-a="rstyle" data-v="${k}"><span class="stsw">${S.sw.map(c => `<i style="background:${c}"></i>`).join('')}</span><b>${S.n}</b><small>${S.sub}</small></button>`).join('')}</div>
       ${r.style ? `<div class="row"><button class="btn" data-a="rstyleall">Use ${esc(ROOM_STYLES[r.style].n)} in every room</button></div>` : ''}
       <h3>Colour palette</h3><p class="muted">Changes wall paint, upholstery, rugs and art. Floors and cabinets stay.</p>
@@ -5550,8 +5747,8 @@ function renderSheet() {
       <div class="row"><button class="btn" data-a="to3d">Step inside</button><button class="btn" data-a="photoroom">Photo render</button></div>`;
     } else if (UI.tab == 'finish') {
       h += `<h3>Floor</h3>${matCard('floor', r.floor, r)}${swatches('floor', out ? 'o' : 'f', r.floor)}`;
-      if (!out) h += `<h3>Walls</h3>${matCard('walls', r.walls, r)}<div class="row"><label class="fld" for="f-wallhex" style="flex:none">Any colour<input type="color" id="f-wallhex" data-f="wallhex" value="${matHex(r.walls)}" style="height:38px;width:72px;padding:2px"></label></div>${swatches('walls', 'w', r.walls)}<h3>Ceiling</h3>${swatches('ceil', 'c', r.ceil)}`;
-      if (r.items.some(i => ITEMS[i.k].parts.some(p => p[6] == '$cab' || p[6] == '$ctr'))) h += `<h3>Cabinets</h3>${matCard('cab', r.cab || 'cab_white', r)}${swatches('cab', 'k', r.cab || 'cab_white')}<h3>Counters</h3>${matCard('ctr', r.ctr || 'quartz', r)}${swatches('ctr', 't', r.ctr || 'quartz')}`;
+      if (!out) h += `<h3>Walls</h3>${matCard('walls', r.walls, r)}<div class="row"><label class="fld" for="f-wallhex" style="flex:none">Any colour<input type="color" id="f-wallhex" data-f="wallhex" value="${matHex(r.walls)}" style="height:38px;width:72px;padding:2px"></label><button class="btn" data-a="colsheet" data-v="walls" style="align-self:end">Paint colours and codes</button></div>${paintName(matHex(r.walls)) ? `<p class="muted">${esc(paintName(matHex(r.walls)))}</p>` : ''}${swatches('walls', 'w', r.walls)}<h3>Ceiling</h3><div class="row"><button class="btn" data-a="colsheet" data-v="ceil">Paint colour for the ceiling</button></div>${swatches('ceil', 'c', r.ceil)}`;
+      if (r.items.some(i => ITEMS[i.k].parts.some(p => p[6] == '$cab' || p[6] == '$ctr'))) h += `<h3>Cabinets</h3>${matCard('cab', r.cab || 'cab_white', r)}<div class="row"><button class="btn" data-a="colsheet" data-v="cab">Paint colour for the cabinets</button></div>${swatches('cab', 'k', r.cab || 'cab_white')}<h3>Counters</h3>${matCard('ctr', r.ctr || 'quartz', r)}${swatches('ctr', 't', r.ctr || 'quartz')}`;
       if (r.fence) h += `<h3>Fence</h3>${matCard('fence', r.fence, r)}${swatches('fence', 'n', r.fence)}`;
     } else if (UI.tab == 'furnish') {
       const cats = {}; for (const [k, i] of Object.entries(ITEMS)) (cats[i.c] = cats[i.c] || []).push(k);
@@ -5560,6 +5757,7 @@ function renderSheet() {
       if (out && ['yard', 'patio', 'garden', 'deck'].includes(r.type)) h += `<h3>Design this ${esc(T(r).n.toLowerCase())} in one tap</h3><div class="stylegrid">${Object.entries(YARD_PACKS).map(([k, y]) => `<button class="stl" data-a="ypack" data-v="${k}"><b>${y[0]}</b><small>${y[1]}</small></button>`).join('')}</div><p class="muted">Replaces the outdoor pieces here; trees and Undo stay available.</p>`;
       h += out ? '' : `<div class="row"><button class="btn p" data-a="biopen">Design a built-in</button>${['kitchen'].includes(r.type) || r.items.some(i => ['base_cab', 'island', 'sink_cab'].includes(i.k)) ? '<button class="btn" data-a="kpopen">Kitchen planner</button>' : ''}${T(r).wet ? '<button class="btn" data-a="biopen" data-v="shower">Shower designer</button>' : ''}</div>`;
       h += r.items.length ? `<div>${r.items.map((it, i) => `<div class="li"><span>${esc(ITEMS[it.k].n)}</span><button class="btn" data-a="pickitem" data-i="${i}">Move</button><button class="btn" data-a="rotitem" data-i="${i}">Rotate</button><button class="btn d" data-a="rmitem" data-i="${i}">Remove</button></div>`).join('')}</div>` : '<p class="muted">Nothing in this room yet.</p>';
+      h += `<div class="row"><button class="btn" data-a="myopen">Add my own item with its real size</button></div>`;
       h += order.map(c => `<h3>Add: ${c}</h3><div class="chips">${cats[c].map(k => `<button class="chip" data-a="additem" data-k="${k}">${esc(ITEMS[k].n)}</button>`).join('')}</div>`).join('');
     } else if (UI.tab == 'open') {
       const walls = [['N', 'North wall'], ['E', 'East wall'], ['S', 'South wall'], ['W', 'West wall']];
@@ -5577,7 +5775,7 @@ function renderSheet() {
     title = 'Project'; tall = true;
     const cloud = CAP.doc ? (CAP.cloud == 'fail' ? 'Could not reach your account storage just now; changes are kept in this browser.' : 'Saved to your account as you work.') : 'Saved in this browser only. Use Save project file to keep a copy.';
     h = `<div class="row">${fld('Project name', 'f-pname', 'pname', P.name, 'type="text" maxlength="50"')}${selc('Units', 'f-units', 'units', [['ft', 'Feet and inches'], ['m', 'Metres']], P.units)}</div><p class="muted">${cloud}</p>
-    <h3>Change the whole house</h3><div class="row"><button class="btn p" data-a="hchat">House chat with Claude</button><button class="btn" data-a="sheet" data-v="history">History, undo and redo</button><button class="btn" data-a="sheet" data-v="review">Design review</button><button class="btn" data-a="sheet" data-v="plans">Browse house plans</button><button class="btn" data-a="mirror">Mirror the plan</button><button class="btn" data-a="sheet" data-v="shape">House shape</button><button class="btn" data-a="sheet" data-v="lot">Your real lot</button><button class="btn" data-a="sheet" data-v="energy">Energy and heating</button><button class="btn" data-a="sheet" data-v="takeoff">Materials list</button><button class="btn" data-a="sheet" data-v="structure">Structure</button><button class="btn" data-a="sheet" data-v="drawings">Permit drawings</button><button class="btn" data-a="dldxf">Plans for CAD (DXF)</button><button class="btn" data-a="sheet" data-v="mep">Electrical and heating layout</button><button class="btn" data-a="sheet" data-v="pricing">Itemized budget</button><button class="btn" data-a="sheet" data-v="versions">Design versions${(P.versions || []).length ? ' (' + P.versions.length + ')' : ''}</button></div><h3>Outside finishes</h3><div class="row"><button class="btn p" data-a="xopen">Design the exterior in 3D</button></div><div class="row">${selc('Siding', 'f-sid', 'ext', Object.entries(MATS).filter(([, m]) => m[6].includes('x')).map(([k, m]) => [k, m[0]]), P.ext.siding, 'data-p="siding"')}${selc('Roof', 'f-roof', 'ext', Object.entries(MATS).filter(([, m]) => m[6].includes('r')).map(([k, m]) => [k, m[0]]), P.ext.roof, 'data-p="roof"')}</div>
+    <h3>Change the whole house</h3><div class="row"><button class="btn p" data-a="hchat">House chat with Claude</button><button class="btn" data-a="sheet" data-v="household">Your household and must-haves</button><button class="btn" data-a="myopen">My items</button><button class="btn" data-a="sheet" data-v="history">History, undo and redo</button><button class="btn" data-a="sheet" data-v="review">Design review</button><button class="btn" data-a="sheet" data-v="plans">Browse house plans</button><button class="btn" data-a="mirror">Mirror the plan</button><button class="btn" data-a="sheet" data-v="shape">House shape</button><button class="btn" data-a="sheet" data-v="lot">Your real lot</button><button class="btn" data-a="sheet" data-v="energy">Energy and heating</button><button class="btn" data-a="sheet" data-v="takeoff">Materials list</button><button class="btn" data-a="sheet" data-v="structure">Structure</button><button class="btn" data-a="sheet" data-v="drawings">Permit drawings</button><button class="btn" data-a="dldxf">Plans for CAD (DXF)</button><button class="btn" data-a="sheet" data-v="mep">Electrical and heating layout</button><button class="btn" data-a="sheet" data-v="pricing">Itemized budget</button><button class="btn" data-a="sheet" data-v="versions">Design versions${(P.versions || []).length ? ' (' + P.versions.length + ')' : ''}</button></div><h3>Outside finishes</h3><div class="row"><button class="btn p" data-a="xopen">Design the exterior in 3D</button></div><div class="row">${selc('Siding', 'f-sid', 'ext', Object.entries(MATS).filter(([, m]) => m[6].includes('x')).map(([k, m]) => [k, m[0]]), P.ext.siding, 'data-p="siding"')}${selc('Roof', 'f-roof', 'ext', Object.entries(MATS).filter(([, m]) => m[6].includes('r')).map(([k, m]) => [k, m[0]]), P.ext.roof, 'data-p="roof"')}</div>
     <div class="row">${selc('Roof pitch', 'f-pitch', 'ext', [['0.25', '3 in 12, low'], ['0.333', '4 in 12'], ['0.5', '6 in 12'], ['0.667', '8 in 12'], ['0.833', '10 in 12'], ['1', '12 in 12, steep']], String(P.ext.pitch), 'data-p="pitch"')}<label class="fld" for="f-door" style="flex:none">Front door<input type="color" id="f-door" data-f="ext" data-p="door" value="${P.ext.door}" style="height:38px;width:72px;padding:2px"></label></div>
     <h3>Ceiling height by level</h3><div class="row">${LORD.map(l => num(`${LNAME[l]} (${U()})`, 'f-lv' + l, 'lvh', toU(P.lv[l].h), `data-p="${l}"`)).join('')}</div>
     <h3>Files</h3><div class="row">${CAP.dl ? '<button class="btn" data-a="dljson">Save project file</button>' : ''}<button class="btn" data-a="copyjson">Copy project data</button><button class="btn" data-a="openjson">Open project file</button><button class="btn" data-a="sheet" data-v="import">Paste project data</button>${STANDALONE ? '<button class="btn" data-a="sheet" data-v="apikey">Claude on this phone</button>' : ''}</div>
@@ -5598,6 +5796,14 @@ function renderSheet() {
     <h3>Minimum setbacks</h3><div class="row">${num(`Front (${U()})`, 'f-zf', 'zon', toU(Z.front), 'data-p="front"')}${num(`Sides (${U()})`, 'f-zs', 'zon', toU(Z.side), 'data-p="side"')}${num(`Rear (${U()})`, 'f-zr', 'zon', toU(Z.rear), 'data-p="rear"')}</div>
     <h3>Slope and orientation</h3><p class="muted">The slope tilts the ground in 3D and changes how high decks sit above grade. A walk-out basement shows the downhill basement wall as siding, ready for doors and big windows. True north turns the sun to match your lot.</p><div class="row">${num(`Ground falls across the lot (${U()})`, 'f-sf', 'site', toU(siteCfg().fall), 'data-p="fall"')}${selc('Downhill toward', 'f-st', 'site', [['S', 'Street (south on the plan)'], ['N', 'Back (north)'], ['E', 'East'], ['W', 'West']], siteCfg().toward, 'data-p="toward"')}${selc('Basement', 'f-sw', 'site', [['0', 'Fully below grade'], ['1', 'Walk-out on the downhill side']], siteCfg().walkout ? '1' : '0', 'data-p="walkout"')}</div><div class="row">${selc('Plan top points', 'f-sn', 'site', [['0', 'True north'], ['45', 'North-east'], ['90', 'East'], ['135', 'South-east'], ['180', 'South'], ['225', 'South-west'], ['270', 'West'], ['315', 'North-west']], String(Math.round(siteCfg().north / 45) * 45 % 360), 'data-p="north"')}${num('Latitude (°N)', 'f-sl', 'site', siteCfg().lat, 'data-p="lat"')}</div>
     <h3>Limits</h3><div class="row">${num('Lot coverage (%)', 'f-zc', 'zonraw', Z.cover, 'data-p="cover"')}${num(`Building height (${U()})`, 'f-zh', 'zon', toU(Z.maxH), 'data-p="maxH"')}${num(`Fence height (${U()})`, 'f-zfh', 'zon', toU(Z.fenceH), 'data-p="fenceH"')}</div>`;
+  } else if (UI.sheet == 'household') {
+    title = 'Your household'; tall = true; h = householdSheet();
+  } else if (UI.sheet == 'myitem') {
+    title = 'My items'; tall = true; h = myItemSheet();
+  } else if (UI.sheet == 'itemsize') {
+    title = 'Size and position'; h = itemSizeSheet();
+  } else if (UI.sheet == 'colour') {
+    title = 'Colours'; tall = true; h = colourSheet();
   } else if (UI.sheet == 'history') {
     title = 'History'; tall = true; h = historySheet();
   } else if (UI.sheet == 'apikey') {
@@ -5759,6 +5965,7 @@ function fitNote(b) { const z = briefSize(b), need = z.total + 2 * P.zoning.side
 function renderBrief() {
   const b = brief(), q = UI.q, z = briefSize(b), H = [];
   H.push(`<div class="prog"><i style="width:${(q + 1) / NQ * 100}%"></i></div>`);
+  if (q == 0) H.push(`<div class="card row" style="margin-bottom:10px"><span style="flex:1;min-width:180px"><b>Tell the app who lives here.</b> Household, pets, hobbies, work from home and your must-haves shape the checks and every Claude suggestion.</span><button class="btn" data-a="sheet" data-v="household">Your household</button></div>`);
   if (q == 0) H.push(`<div class="card row" style="margin-bottom:10px"><span style="flex:1;min-width:180px"><b>Or start from a ready-made plan.</b> ${PLANS.length} finished designs from Québec contemporary to English heritage, Scandinavian, chalet and farmhouse.</span><button class="btn p" data-a="sheet" data-v="plans">Browse plans</button></div>`);
   if (q == 0) {
     H.push(`<h2>What are you building?</h2><p class="muted">Describe your household and what matters to you, in your own words. ${CAP.sample ? 'Claude reads it and fills in the next questions for you to check.' : 'The next questions are filled in from the words you use.'} Or skip straight to Next.</p>
@@ -5885,7 +6092,7 @@ function render3DUI() {
   }
   const hint = G.mode == 'in' ? 'Drag to look around. Tap the floor to walk there.' : 'Drag to orbit. Pinch to zoom.'; if ($('ghint').textContent != hint) { $('ghint').textContent = hint; $('ghint').hidden = false; }
   $('gtime').value = GLR.env.hour; $('gtl').textContent = hourLabel(GLR.env.hour); $('gmonth').value = GLR.env.month;
-  $('glights').textContent = GLR.env.lightsOn ? 'Lights on' : 'Lights off'; $('gsnap').hidden = !CAP.dl;
+  $('glights').textContent = GLR.env.lightsOn ? 'Lights on' : 'Lights off'; $('gsnap').hidden = !CAP.dl; if ($('gedit')) { $('gedit').classList.toggle('p', !!UI.edit3d); $('gedit').textContent = UI.edit3d ? 'Editing' : 'Edit'; } render3DEdit();
 }
 function camFor() {
   const C = GLR.cam, cv = $('gl'), asp = (cv.clientWidth || 1) / (cv.clientHeight || 1);
@@ -5936,7 +6143,8 @@ function initGL() {
   });
   const up = e => {
     if (!ptrs.has(e.pointerId)) return; ptrs.delete(e.pointerId); if (pin) { if (ptrs.size < 2) pin = null; return; }
-    const q = g; g = null; if (!q || q.moved || C.mode != 'walk') return;
+    const q = g; g = null; if (q && !q.moved && UI.edit3d) { edit3DTap(e.clientX, e.clientY); return; }
+    if (!q || q.moved || C.mode != 'walk') return;
     const ry = GLR.ray(e.clientX, e.clientY), cur = byId(G.room); if (!cur) return;
     let t = ry.d[1] < -.04 ? (C.pos[1] - 1.6 - ry.o[1]) / ry.d[1] : 2.2; t = Math.min(t, 14);
     const px = ry.o[0] + ry.d[0] * t, pz = ry.o[2] + ry.d[2] * t;
@@ -6110,6 +6318,34 @@ const A = {
   vdel: t => { const v = (P.versions || []).find(q => q.id == t.dataset.id); if (!v) return; P.versions = P.versions.filter(q => q !== v); if (v.asset && CAP.assets) CAP.assets.delete(v.asset).catch(() => { }); delete VCACHE[v.id]; UI.vcmp = null; commit(); renderSheet(); toast(`Deleted "${v.name}".`); },
   walk: () => walkRun(), walkstop: () => { WALK.cancel = true; }, walksave: () => { if (WALK.blob) dl(slug() + '-walkthrough.' + WALK.ext, WALK.blob); }, walkclose: () => { $('vidwrap').hidden = true; goStep('package'); }, walkshow: () => { if (!WALK.url) return; $('vidwrap').hidden = false; $('vidrec').hidden = true; $('vidout').hidden = false; $('vidstage').innerHTML = `<video src="${WALK.url}" controls playsinline style="max-width:100%;max-height:100%"></video>`; },
   enpkg: t => { for (const [k, v] of Object.entries(ENV_PKG[t.dataset.v][2])) energySet(k, v); commit(); renderSheet(); }, dltake: () => dl(slug() + '-materials.csv', takeoffCSV()), copytake: () => copyText(takeoffCSV()),
+  e3on: () => { UI.edit3d = !UI.edit3d; UI.e3 = null; render3DUI(); if (UI.edit3d) toast('Tap furniture, a floor, a wall or the ceiling.'); },
+  e3off: () => { UI.edit3d = false; UI.e3 = null; UI.selItem = null; render3DUI(); },
+  e3mv: t => { e3Move(t.dataset.v); show3D(); },
+  e3del: () => { const e = UI.e3, r = e && byId(e.id); if (!r || e.i == null) return; r.items.splice(e.i, 1); UI.e3 = null; UI.selItem = null; UI.lastAct = 'Removed furniture'; commit(); show3D(); },
+  e3col: () => { UI.colSlot = 'item'; UI.colPhoto = null; openSheet('colour'); }, e3paint: t => { UI.colSlot = t.dataset.v; UI.colPhoto = null; openSheet('colour'); },
+  e3fin: () => { UI.tab = 'finish'; openSheet('room'); }, e3room: () => { UI.tab = 'design'; openSheet('room'); },
+  colsheet: t => { UI.colSlot = t.dataset.v; UI.colPhoto = null; openSheet('colour'); }, colslot: t => { UI.colSlot = t.dataset.v; renderSheet(); },
+  colset: t => { UI.lastAct = 'Paint colour'; setColour(cur(), UI.colSlot || 'walls', t.dataset.v, t.dataset.n || null); commit(); renderSheet(); renderPlan(); toast(`${t.dataset.n || t.dataset.v.toUpperCase()} on the ${(COL_SLOTS[UI.colSlot || 'walls'] || '').toLowerCase()}.`); },
+  rprio: t => { cur().prio = t.dataset.v == 'std' ? undefined : t.dataset.v; commit(); renderSheet(); },
+  hhtog: t => { const p = prof(); p[t.dataset.v] = !p[t.dataset.v]; if (t.dataset.v == 'ev' && p.ev && !(P.tech || []).includes('ev')) P.tech = [...(P.tech || []), 'ev']; P.profile = p; commit(); renderSheet(); },
+  hhhob: t => { const p = prof(), k = t.dataset.v; p.hobbies = p.hobbies.includes(k) ? p.hobbies.filter(h => h != k) : [...p.hobbies, k]; P.profile = p; commit(); renderSheet(); },
+  hhfix: t => { const v = t.dataset.v, IN = indoor(); let r = null, k = null; if (v == 'ev') { P.tech = [...new Set([...(P.tech || []), 'ev'])]; } else { if (v == 'dogwash') { r = IN.find(q => q.type == 'mudroom'); k = 'dog_wash'; } if (v == 'piano') { r = IN.find(q => ['music', 'living', 'family', 'office'].includes(q.type)); k = 'piano'; } if (!r) { toast('No room for it yet.'); return; } r.items.push(placeItem(r, [k, 'N', .5, {}])); toast(`${ITEMS[k].n} added to the ${r.name.toLowerCase()}. Drag it where you like.`, 3600); } commit(); renderSheet(); },
+  mustadd: () => { const k = UI.mustK || 'room', el = $('mu-v'); let v = el ? el.value : '1'; if (k != 'text' && k != 'room' && !(+v > 0) && !['mainPrimary', 'walkout'].includes(k)) { toast('Type a number.'); return; } if (k == 'text' && !v.trim()) return; if (k.startsWith('area')) v = P.units == 'm' ? +v : +v / 10.7639; P.musts = [...(P.musts || []), { k, v: ['text', 'room'].includes(k) ? v : +v }]; commit(); renderSheet(); },
+  musttick: t => { const m = P.musts[+t.dataset.v]; m.done = !m.done; commit(); renderSheet(); }, mustdel: t => { P.musts = P.musts.filter((m, i) => i != +t.dataset.v); commit(); renderSheet(); },
+  myopen: () => { UI.myEdit = null; openSheet('myitem'); }, myedit: t => { UI.myEdit = t.dataset.v; renderSheet(); },
+  mysave: () => { const n = $('mi-n').value.trim(), w = fromU($('mi-w').value), d = fromU($('mi-d').value), h = fromU($('mi-h').value); if (!n || !(w > 0) || !(d > 0) || !(h > 0)) { toast('Name and all three sizes, please.'); return; } const k = UI.myEdit || 'mi_' + uid(), isNew = !UI.myEdit; P.myItems = { ...(P.myItems || {}), [k]: { n: n.slice(0, 40), base: $('mi-b').value, w: r2(w), d: r2(d), h: r2(h), col: $('mi-cc').checked ? null : $('mi-c').value } }; myRegister(); const r = cur(); if (isNew && r) r.items.push(placeItem(r, [k, 'C', .5, {}])); UI.myEdit = null; UI.lastAct = 'My item'; commit(); G.dirty = true; renderSheet(); renderPlan(); toast(isNew && r ? `${n} added to the ${r.name.toLowerCase()}. Drag it to test the fit.` : 'Saved.', 3600); },
+  mydel: () => { const k = UI.myEdit; if (!k) return; delete P.myItems[k]; for (const r of P.rooms) r.items = r.items.filter(i => i.k != k); delete ITEMS[k]; UI.myEdit = null; commit(); G.dirty = true; renderSheet(); renderPlan(); },
+  mystylesave: () => { saveMyStyle(cur()); commit(); renderSheet(); toast('Saved as My style.'); }, myapply: () => { applyMyStyle(cur()); UI.lastAct = 'Applied My style'; commit(); renderSheet(); renderPlan(); }, myapplyall: () => { for (const r of indoor().filter(r => !r.part && !T(r).unfin && r.type != 'garage')) applyMyStyle(r); UI.lastAct = 'Applied My style everywhere'; commit(); renderSheet(); renderPlan(); toast('My style applied to every finished room.'); },
+  shotlike: t => { likePhoto(+t.dataset.i, t.dataset.v == '1'); commit(); refresh(); toast(t.dataset.v == '1' ? 'Liked. Claude will lean this way.' : 'Noted. Claude will steer away from this look.'); },
+  anchor: t => { if (t.dataset.k == 'x') UI.anX = t.dataset.v; else UI.anY = t.dataset.v; renderSheet(); },
+  mstart: () => { UI.multi = new Set(UI.sel ? [rootOf(byId(UI.sel)).id] : []); UI.sel = null; UI.selItem = null; renderSel(); renderPlan(); toast('Tap rooms to select them.'); },
+  mdone: () => { UI.multi = null; renderSel(); renderPlan(); },
+  mall: () => { UI.multi = new Set(P.rooms.filter(r => r.lv == UI.lv && !r.part).map(r => r.id)); renderSel(); renderPlan(); },
+  malign: t => { const rs = [...UI.multi].map(byId).filter(Boolean), k = t.dataset.v, m = Math.min(...rs.map(r => r[k])); for (const r of rs) { const d = m - r[k]; for (const q of [r, ...partsOf(r)]) q[k] = r2(q[k] + d); } UI.lastAct = 'Aligned rooms'; commit(); renderPlan(true); },
+  mcopy: () => { const rs = [...UI.multi].map(byId).filter(Boolean).flatMap(r => [r, ...partsOf(r)]); UI.clip = JSON.stringify(rs); renderSel(); toast(`${UI.multi.size} copied. Switch floors if you like, then Paste.`); },
+  mdup: () => { UI.clip = JSON.stringify([...UI.multi].map(byId).filter(Boolean).flatMap(r => [r, ...partsOf(r)])); pasteRooms(true); },
+  mpaste: () => pasteRooms(false),
+  mdel: () => { const ids = new Set([...UI.multi].flatMap(id => [id, ...partsOf(byId(id)).map(q => q.id)])); P.rooms = P.rooms.filter(r => !ids.has(r.id)); UI.multi = new Set(); UI.lastAct = 'Deleted rooms'; commit(); renderSel(); renderPlan(true); },
   keysave: () => { const k = $('ak').value.trim(), m = $('am').value.trim(); if (m) localStorage.setItem(MODELK, m); if (k) { localStorage.setItem(KEYK, k); CAP.sample = apiSampler(k); CAP.imgs = true; toast('Saved on this phone. The chats and AI helpers are on.'); } renderSheet(); },
   keydel: () => { localStorage.removeItem(KEYK); CAP.sample = null; CAP.imgs = false; renderSheet(); toast('Key removed.'); },
   keytest: async () => { const r = await askClaude('Reply with {"ok":true}', 'Testing the key'); toast(r && r.ok ? 'The key works.' : 'The key did not work. Check it and the model name.'); },
@@ -6195,6 +6431,8 @@ const F = {
   rchams: v => { const r = cur(); if (r.cham) r.cham.s = r2(clamp(fromU(v), .3, Math.min(r.w, r.d) - .3)); commit(); renderPlan(); },
   rover: v => { const r = cur(); if (v == '1') r.overlook = true; else delete r.overlook; commit(); renderSheet(); renderPlan(); },
   site: (v, t) => { const s = siteCfg(), p = t.dataset.p; if (p == 'fall') s.fall = r2(clamp(fromU(+v) || 0, 0, 12)); else if (p == 'toward') s.toward = v; else if (p == 'walkout') s.walkout = v == '1'; else if (p == 'north') s.north = +v; else if (p == 'lat') s.lat = clamp(+v || 44.65, 40, 50); P.site = s; G.dirty = true; commit(); renderSheet(); },
+  hh: (v, t) => { const p = prof(); p[t.dataset.k] = isNaN(+v) ? v : +v; P.profile = p; commit(); renderSheet(); }, hhnotes: v => { const p = prof(); p.notes = v.slice(0, 400); P.profile = p; commit(); }, mustk: v => { UI.mustK = v; renderSheet(); },
+  colany: v => { setColour(cur(), UI.colSlot || 'walls', v); commit(); renderSheet(); renderPlan(); }, colhex: v => { const m = /^#?([0-9a-f]{6})$/i.exec(v.trim()); if (!m) { toast('A hex code looks like #3E4652.'); return; } setColour(cur(), UI.colSlot || 'walls', '#' + m[1]); commit(); renderSheet(); renderPlan(); }, colq: v => { UI.colQ = v; renderSheet(); },
   enset: (v, t) => { energySet(t.dataset.k, t.dataset.k == 'ach' ? +v : v); commit(); renderSheet(); }, ennum: (v, t) => { if (v === '' || isNaN(+v)) return; energySet(t.dataset.k, +v); commit(); renderSheet(); },
   lotu: (v, t) => { const u = P.site.under; if (v === '' || isNaN(+v)) return; if (t.dataset.k == 'op') u.op = clamp(+v / 100, .1, 1); else u.rot = +v; commit(); renderPlan(); }, lotfront: v => { P.lot.front = +v; commit(); renderSheet(); renderPlan(); }, lottree: (v, t) => { const tr = P.site.trees[+t.dataset.i]; tr[t.dataset.k] = t.dataset.k == 'r' ? +v : v; commit(); G.dirty = true; renderPlan(); },
   stnum: (v, t) => { if (v === '' || isNaN(+v)) return; P.struct = { ...(P.struct || {}), [t.dataset.k]: +v }; commit(); renderSheet(); },
@@ -6210,8 +6448,11 @@ const F = {
   addtext: v => { UI.addText = v; }, none: () => { }, btext: v => { brief().text = v; },
   blot: (v, t) => { if (!(+v > 0)) return; brief()[t.dataset.p] = clamp(fromU(v), 12, 300); renderBrief(); },
   rname: v => { const r = cur(); for (const q of partsOf(r)) if (q.name == r.name + ' wing') q.name = ((v.trim().slice(0, 34) || T(r).n) + ' wing'); r.name = v.trim().slice(0, 40) || T(r).n; commit(); renderSheet(); renderPlan(true); },
-  rw: v => { const r = cur(); if (!(+v > 0)) return; r.w = clamp(fromU(v), .6, 60); fixOpenings(r); commit(); renderSheet(); renderPlan(true); },
-  rd: v => { const r = cur(); if (!(+v > 0)) return; r.d = clamp(fromU(v), .6, 60); fixOpenings(r); commit(); renderSheet(); renderPlan(true); },
+  rw: v => { const r = cur(); if (!(+v > 0)) return; const o = r.w; r.w = clamp(fromU(v), .6, 60); const dx = r.w - o, a = UI.anX || 'W'; if (a == 'E') r.x = r2(r.x - dx); else if (a == 'C') r.x = r2(r.x - dx / 2); if (a != 'W') for (const it of r.items) it.x = r2(it.x + (a == 'E' ? dx : dx / 2)); fixOpenings(r); commit(); renderSheet(); renderPlan(true); },
+  rd: v => { const r = cur(); if (!(+v > 0)) return; const o = r.d; r.d = clamp(fromU(v), .6, 60); const dy = r.d - o, a = UI.anY || 'N'; if (a == 'S') r.y = r2(r.y - dy); else if (a == 'C') r.y = r2(r.y - dy / 2); if (a != 'N') for (const it of r.items) it.y = r2(it.y + (a == 'S' ? dy : dy / 2)); fixOpenings(r); commit(); renderSheet(); renderPlan(true); },
+  rx: v => { const r = cur(); if (v === '' || isNaN(+v)) return; const nx = r2(P.lot.x + fromU(v)), dx = nx - r.x; for (const q of [r, ...partsOf(r)]) q.x = r2(q.x + dx); commit(); renderSheet(); renderPlan(true); },
+  ry: v => { const r = cur(); if (v === '' || isNaN(+v)) return; const ny = r2(P.lot.y + fromU(v)), dy = ny - r.y; for (const q of [r, ...partsOf(r)]) q.y = r2(q.y + dy); commit(); renderSheet(); renderPlan(true); },
+  isz: (v, t) => { const r = cur(), it = r && r.items[UI.selItem]; if (!it || v === '' || isNaN(+v)) return; const k = t.dataset.k, m = fromU(v); if (k == 'w') it.w = r2(clamp(m, .1, 12)); else if (k == 'x') it.x = r2(clamp(m, 0, r.w)); else if (k == 'y') it.y = r2(clamp(m, 0, r.d)); commit(); renderSheet(); renderPlan(); },
   rh: v => { const r = cur(); if (!(+v > 0)) return; const h = fromU(v); if (h > lvH(r.lv) + .001) toast(`The ${LNAME[r.lv].toLowerCase()} is ${fL(lvH(r.lv))} high. Raise the level in the project menu for taller rooms.`, 4200); r.h = clamp(h, 1.8, lvH(r.lv)); for (const w of r.wins) if (w.sill + w.h > r.h - .05) w.h = r2(Math.max(.3, r.h - .05 - w.sill)); commit(); renderSheet(); },
   rdir: v => { cur().dir = v; commit(); renderSheet(); renderPlan(); },
   rlv: v => { const r = cur(); for (const q of partsOf(r)) { q.lv = v; q.h = Math.min(q.h, lvH(v)); } r.lv = v; r.h = Math.min(r.h, lvH(v)); if (TYPES[r.type].drop && v == 'M') r.drop = TYPES[r.type].drop; else delete r.drop; UI.lv = v; delete VB[v]; commit(); renderSheet(); renderPlan(true); },
@@ -6235,6 +6476,16 @@ const F = {
   gsel: v => { if (G.mode == 'doll') G.lv = v; else G.room = v; G.camKey = null; show3D(); },
   gtime: v => { GLR.env.hour = +v; $('gtl').textContent = hourLabel(+v); GLR.sunDirty(); }
 };
+function pasteRooms(dup) {
+  if (!UI.clip) return; const src = JSON.parse(UI.clip), map = {}; for (const r of src) map[r.id] = uid();
+  const sameLv = src.every(r => r.lv == UI.lv), off = sameLv || dup ? 1 : 0, out = [];
+  for (const r of src) { const n = { ...r, id: map[r.id], lv: UI.lv, x: r2(r.x + off), y: r2(r.y + off) }; if (r.part) n.part = map[r.part] || undefined; if (!n.part) delete n.part; if (!r.part) n.name = (r.name + (sameLv ? ' copy' : '')).slice(0, 40); out.push(n); }
+  P.rooms.push(...out); UI.multi = new Set(out.filter(r => !r.part).map(r => r.id)); UI.lastAct = dup ? 'Duplicated rooms' : 'Pasted rooms'; commit(); renderSel(); renderPlan(true); toast(`${UI.multi.size} pasted. Drag them into place.`);
+}
+function itemSizeSheet() {
+  const r = cur(), it = r && r.items[UI.selItem]; if (!it) return '<p class="muted">Select a piece of furniture first.</p>'; const d = ITEMS[it.k];
+  return `<p><b>${esc(d.n)}</b> in the ${esc(r.name.toLowerCase())}</p><div class="row">${num(`Width (${U()})`, 'is-w', 'isz', toU(it.w || d.w), 'data-k="w"')}<span class="muted" style="align-self:end">Depth ${fL(d.d)} · height ${fL(d.h)}</span></div><div class="row">${num(`Centre from the left wall (${U()})`, 'is-x', 'isz', toU(it.x), 'data-k="x"')}${num(`Centre from the top wall (${U()})`, 'is-y', 'isz', toU(it.y), 'data-k="y"')}</div><div class="row"><button class="btn" data-a="itemrot">Rotate 90°</button><button class="btn p" data-a="close">Done</button></div>`;
+}
 function stepBack() { const j = undoStack.pop(), m = undoMeta.pop(); if (!j) return false; redoStack.push(lastJSON); redoMeta.push(m || { at: Date.now(), label: 'Edit' }); P = JSON.parse(j); lastJSON = j; return true; }
 function stepFwd() { const j = redoStack.pop(), m = redoMeta.pop(); if (!j) return false; undoStack.push(lastJSON); undoMeta.push(m || { at: Date.now(), label: 'Edit' }); P = JSON.parse(j); lastJSON = j; return true; }
 function afterJump() { if (typeof regAll == 'function') regAll(); else biRegister(); if (UI.sel && !byId(UI.sel)) { UI.sel = null; closeSheet(true); } UI.selItem = null; for (const k in VB) delete VB[k]; G.dirty = true; save(); recheck(); refresh(); }
