@@ -2020,7 +2020,7 @@ function chatPanel(r) {
   ${imgAttach('chat')}
   <label class="fld" for="chattext">Your message<textarea id="chattext" data-f="chatdraft" placeholder="A cosy reading corner by the window, darker walls, and a bigger rug">${esc(UI.chatDraft || '')}</textarea></label>
   <div class="row"><button class="btn p" data-a="chatsend">${CAP.sample ? 'Send to Claude' : 'Apply'}</button>${CAP.dict ? '<button class="btn" data-a="mic" data-for="chattext">Speak</button>' : ''}${log.length ? '<button class="btn" data-a="chatclear">Clear chat</button>' : ''}</div>
-  ${CAP.sample ? '' : '<p class="muted">Claude is not available in this view, so only sizes, finishes, styles, lighting and catalogue items are understood.</p>'}`;
+  ${CAP.sample ? '' : STANDALONE ? keyLink('Until then it only understands sizes, finishes, styles, lighting and catalogue items.') : '<p class="muted">Claude is not available in this view, so only sizes, finishes, styles, lighting and catalogue items are understood.</p>'}`;
 }
 function roomBrief(r) {
   const ex = 'NESW'.split('').filter(w => extIv(r, w).length), nb = [];
@@ -2262,7 +2262,7 @@ function hchatPanel() {
   ${imgAttach('hchat')}
   <label class="fld" for="hchattext">Your message<textarea id="hchattext" data-f="hchatdraft" placeholder="Make the kitchen 2 feet wider and add a walk-in pantry beside it">${esc(UI.hchatDraft || '')}</textarea></label>
   <div class="row"><button class="btn p" data-a="hchatsend">${CAP.sample ? 'Send to Claude' : 'Apply'}</button>${CAP.dict ? '<button class="btn" data-a="mic" data-for="hchattext">Speak</button>' : ''}${log.length ? '<button class="btn" data-a="hchatclear">Clear chat</button>' : ''}</div>
-  ${CAP.sample ? '' : '<p class="muted">Claude is not available in this view, so only simple requests work: add a room type, remove or resize a named room, or an exterior style.</p>'}`;
+  ${CAP.sample ? '' : STANDALONE ? keyLink('Until then it can only add a room type, remove or resize a named room, or apply an exterior style.') : '<p class="muted">Claude is not available in this view, so only simple requests work: add a room type, remove or resize a named room, or an exterior style.</p>'}`;
 }
 async function hchatSend(text) {
   const img = UI.img && UI.img.for == 'hchat' ? UI.img : null; text = (text || '').trim();
@@ -4552,7 +4552,7 @@ const apiSampler = key => ({
     content.push({ type: 'text', text: prompt + '\n\nAnswer with the JSON only, no other text.' });
     let r; try { r = await fetch('https://api.anthropic.com/v1/messages', { method: 'POST', signal: opt.signal, headers: { 'content-type': 'application/json', 'x-api-key': key, 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' }, body: JSON.stringify({ model: localStorage.getItem(MODELK) || 'claude-sonnet-5-5', max_tokens: 8000, messages: [{ role: 'user', content }] }) }); }
     catch (e) { throw Object.assign(new Error('network'), { code: e && e.name == 'AbortError' ? 'cancelled' : 'network' }); }
-    if (!r.ok) throw Object.assign(new Error('api ' + r.status), { code: r.status == 429 || r.status == 529 ? 'rate_limited' : r.status == 401 ? 'not_granted' : 'api_error' });
+    if (!r.ok) { let m = ''; try { const j = await r.json(); m = (j.error && j.error.message) || ''; } catch (e) { } throw Object.assign(new Error(m || 'api ' + r.status), { code: r.status == 429 || r.status == 529 ? 'rate_limited' : r.status == 401 || r.status == 403 ? 'bad_key' : 'api_error', apiMsg: m }); }
     const j = await r.json(); return parseJSONReply((j.content || []).map(c => c.text || '').join(''));
   }
 });
@@ -4563,13 +4563,17 @@ function standaloneInit() {
   if (!document.querySelector('link[rel=manifest]')) { const l = document.createElement('link'); l.rel = 'manifest'; l.href = 'manifest.webmanifest'; document.head.appendChild(l); }
   if ('serviceWorker' in navigator && (location.protocol == 'https:' || location.hostname == 'localhost')) navigator.serviceWorker.register('sw.js').then(reg => { reg.addEventListener('updatefound', () => { const w = reg.installing; w && w.addEventListener('statechange', () => { if (w.state == 'installed' && navigator.serviceWorker.controller) toast('A new version of Housewright is ready. Close and reopen the app to use it.', 6000); }); }); reg.update(); }).catch(() => { });
 }
+function keyLink(what) {
+  return `<div class="card" style="margin-top:8px"><b>Claude is not connected in this app yet.</b><p class="muted">${what} The installed app cannot use your Claude subscription; it needs an Anthropic API key, set up once on this phone.</p><div class="row"><button class="btn p" data-a="keyopen">Connect Claude</button></div></div>`;
+}
 function keySheet() {
   const k = localStorage.getItem(KEYK);
-  return `<p class="muted">This copy of Housewright runs on its own, outside Claude. To use the room and house chats, inspiration photos and the AI helpers here, paste an Anthropic API key. It is stored only on this phone and requests go straight from this phone to Anthropic; each request is billed to that key. Everything else works without one.</p>
+  return `<p class="muted">${k ? '<b>Connected.</b> ' : ''}The installed app runs outside the Claude app, so it cannot use your Claude subscription. To use the chats, inspiration photos and AI helpers here, paste an Anthropic API key. It stays on this phone and requests go straight to Anthropic, billed to that key (pay per use). Inside the Claude app none of this is needed.</p>
+  <ol class="muted" style="padding-left:18px;margin:6px 0"><li>Open <b>console.anthropic.com</b> and sign in (same email as Claude is fine).</li><li>Billing: add a payment method and a little credit, and set a monthly limit.</li><li>API keys: <b>Create key</b>, copy it.</li><li>Paste it below and tap Save. It checks the key and connects.</li></ol>
   <div class="row"><label class="fld" style="flex:1"><span>API key</span><input id="ak" type="password" autocomplete="off" placeholder="${k ? 'Saved. Paste a new one to replace it' : 'sk-ant-…'}"></label></div>
   <div class="row"><label class="fld" style="flex:1"><span>Model</span><input id="am" value="${esc(localStorage.getItem(MODELK) || 'claude-sonnet-5-5')}"></label></div>
   <div class="row"><button class="btn p" data-a="keysave">Save</button>${k ? '<button class="btn" data-a="keytest">Test it</button><button class="btn d" data-a="keydel">Remove key</button>' : ''}</div>
-  <p class="muted">Get a key at console.anthropic.com under API keys. Use a key with a monthly spending limit.</p>`;
+  <p class="muted">A typical chat message costs a few cents.</p>`;
 }
 function importSheet() {
   return `<p class="muted">Move a house between the Claude version and this app. In the other copy open ⋯, tap <b>Copy project data</b>, then paste it here. Your current design is saved as a version first.</p><textarea id="impj" rows="8" style="width:100%;font:12px monospace" placeholder="Paste project data here"></textarea><div class="row"><button class="btn p" data-a="impgo">Load this house</button></div>`;
@@ -5871,7 +5875,9 @@ async function askClaude(prompt, label, images) {
   catch (e) {
     const c = e && e.code;
     if (c == 'cancelled') return undefined;
-    if (['not_granted', 'sampling_disabled', 'not_declared', 'capability_disabled', 'capability_removed'].includes(c)) { CAP.sample = null; toast('Claude is not available in this view. Using the built-in catalog.'); }
+    if (c == 'bad_key') toast('Anthropic rejected the API key. Open ⋯ > Claude on this phone and paste it again.', 6000);
+    else if (STANDALONE && c == 'api_error' && e.apiMsg) toast('Anthropic: ' + e.apiMsg.slice(0, 160), 7000);
+    else if (['not_granted', 'sampling_disabled', 'not_declared', 'capability_disabled', 'capability_removed'].includes(c)) { CAP.sample = null; toast('Claude is not available in this view. Using the built-in catalog.'); }
     else if (c == 'rate_limited') toast('Claude is busy or at your usage limit. Using the built-in catalog this time.');
     else toast('Claude could not finish that. Using the built-in catalog this time.');
     return null;
@@ -6346,7 +6352,8 @@ const A = {
   mdup: () => { UI.clip = JSON.stringify([...UI.multi].map(byId).filter(Boolean).flatMap(r => [r, ...partsOf(r)])); pasteRooms(true); },
   mpaste: () => pasteRooms(false),
   mdel: () => { const ids = new Set([...UI.multi].flatMap(id => [id, ...partsOf(byId(id)).map(q => q.id)])); P.rooms = P.rooms.filter(r => !ids.has(r.id)); UI.multi = new Set(); UI.lastAct = 'Deleted rooms'; commit(); renderSel(); renderPlan(true); },
-  keysave: () => { const k = $('ak').value.trim(), m = $('am').value.trim(); if (m) localStorage.setItem(MODELK, m); if (k) { localStorage.setItem(KEYK, k); CAP.sample = apiSampler(k); CAP.imgs = true; toast('Saved on this phone. The chats and AI helpers are on.'); } renderSheet(); },
+  keyopen: () => { UI.keyBack = { sheet: UI.sheet, tab: UI.tab }; openSheet('apikey'); },
+  keysave: async () => { const k = $('ak').value.trim(), m = $('am').value.trim(); if (m) localStorage.setItem(MODELK, m); if (!k && !localStorage.getItem(KEYK)) { toast('Paste the key first.'); return; } if (k) { if (!/^sk-ant-/.test(k)) { toast('That does not look like an Anthropic key. It starts with sk-ant-.'); return; } localStorage.setItem(KEYK, k); CAP.sample = apiSampler(k); CAP.imgs = true; } const r = await askClaude('Reply with {"ok":true}', 'Checking the key'); if (!(r && r.ok)) { renderSheet(); return; } toast('Claude is connected on this phone.'); const b = UI.keyBack; UI.keyBack = null; if (b && b.sheet && b.sheet != 'apikey') openSheet(b.sheet, b.tab); else renderSheet(); },
   keydel: () => { localStorage.removeItem(KEYK); CAP.sample = null; CAP.imgs = false; renderSheet(); toast('Key removed.'); },
   keytest: async () => { const r = await askClaude('Reply with {"ok":true}', 'Testing the key'); toast(r && r.ok ? 'The key works.' : 'The key did not work. Check it and the model name.'); },
   impgo: () => importGo(),
