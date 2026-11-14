@@ -1,5 +1,5 @@
-// Housewright offline support. Version d1c1acad48
-const CACHE = 'housewright-d1c1acad48';
+// Housewright offline support. Version dbddfb49f2
+const CACHE = 'housewright-dbddfb49f2';
 const CORE = ['./', './index.html', './manifest.webmanifest', './icon-192.png', './icon-512.png'];
 self.addEventListener('install', e => { e.waitUntil(caches.open(CACHE).then(c => c.addAll(CORE)).then(() => self.skipWaiting())); });
 self.addEventListener('activate', e => { e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k => k != CACHE).map(k => caches.delete(k)))).then(() => self.clients.claim())); });

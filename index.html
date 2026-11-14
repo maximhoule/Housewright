@@ -46,6 +46,36 @@ nav button i{font:600 12px var(--f-b);width:21px;height:21px;border-radius:50%;b
 nav button.on{color:var(--ink);border-top-color:var(--accent)}
 nav button.on i{background:var(--accent);border-color:var(--accent);color:var(--panel)}
 nav button.done i{background:var(--ok);border-color:var(--ok);color:var(--panel)}
+#coach .g-top{display:flex;align-items:center;gap:8px;min-width:0}
+.g-head{display:flex;align-items:center;gap:8px;flex:1;min-width:0;text-align:left;padding:2px 0;background:none;border:0;color:var(--ink);font:inherit}
+.g-head b{font:600 16px var(--f-d);letter-spacing:.02em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#coach .g-top>b{font:600 16px var(--f-d);letter-spacing:.02em;flex:1}
+.g-num{flex:none;width:24px;height:24px;border-radius:50%;background:var(--accent);color:var(--panel);font:700 13px/24px var(--f-b);text-align:center}
+.g-prog{margin-left:auto;color:var(--mute);font-size:12.5px;white-space:nowrap}
+.g-prog i{font-style:normal}
+#coach .g-top{flex-wrap:wrap}
+.g-sub{flex-basis:100%;font-size:13px;color:var(--mute);order:3;padding-left:32px}
+.g-sub b{color:var(--ink);font-weight:600}
+.g-next{display:flex;align-items:center;gap:8px;background:var(--paper);border-radius:8px;padding:6px 6px 6px 10px;font-size:13.5px;line-height:1.25}
+.g-next span{flex:1;min-width:0}
+.g-tip{font-size:13px;color:var(--mute);line-height:1.3}
+.g-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:2px;max-height:34vh;overflow-y:auto}
+.g-list li{display:flex;align-items:center;gap:8px;min-height:38px}
+.g-chk{flex:none;width:24px;height:24px;border-radius:50%;border:2px solid var(--line);background:var(--panel);color:var(--panel);font:700 14px/20px var(--f-b);padding:0}
+.g-list li.ok .g-chk{background:var(--ok);border-color:var(--ok)}
+.g-list li.ok .g-t{color:var(--mute)}
+.g-t{flex:1;display:flex;align-items:center;gap:6px;text-align:left;background:none;border:0;color:var(--ink);font:500 14.5px var(--f-b);padding:8px 0;min-width:0}
+.g-t span{font-size:11.5px;color:var(--mute);border:1px solid var(--line);border-radius:99px;padding:0 6px}
+.g-t i{margin-left:auto;font-style:normal;color:var(--mute);font-size:18px}
+.g-nav{flex-wrap:nowrap}
+.g-nav .btn{white-space:nowrap}
+.g-roomnav{border-top:1px solid var(--line);padding-top:10px;margin-top:4px}
+.opts.one{grid-template-columns:1fr}
+#toolq{width:100%;font-size:16px;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--paper);color:var(--ink)}
+.tools{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+#toollist>.tool{width:100%;margin-bottom:6px}
+.tool{text-align:left;background:var(--paper);border:1px solid var(--line);border-radius:9px;padding:9px 10px;color:var(--ink);font:500 14px/1.25 var(--f-b);min-height:44px}
+.tool b{font-weight:600}
 #coach{background:var(--panel);border-top:1px solid var(--line);padding:8px 12px;display:flex;flex-direction:column;gap:6px;flex:none}
 #coach p{font-size:13.5px;line-height:1.3}
 #coach .btn{padding:7px 12px}
@@ -240,11 +270,11 @@ table.cmp{width:100%;table-layout:fixed}table.cmp tr>*:first-child{width:27%}tab
 <body>
 <div id="app">
   <header>
-    <button id="pname" data-a="menu" aria-label="Project menu"></button><span class="tag" id="extag" hidden>Example</span>
+    <button id="pname" data-a="sheet" data-v="menu" aria-label="Project settings"></button><span class="tag" id="extag" hidden>Example</span>
     <button class="ib" id="undo" data-a="undo" aria-label="Undo" title="Undo">&#8630;</button><button class="ib" id="redo" data-a="redo" aria-label="Redo" title="Redo" disabled>&#8631;</button>
     <button class="btn" id="b3d" data-a="toggle3d">3D</button>
     <button class="pill" id="pill" data-a="go" data-v="checks"><i></i><span></span></button>
-    <button class="ib" data-a="menu" aria-label="Menu">&#8943;</button>
+    <button class="ib" data-a="tools" aria-label="All tools">&#8943;</button>
   </header>
   <main>
     <section id="v-brief"><div class="scroll"><div class="wrap" id="brief"></div></div></section>
@@ -5685,10 +5715,13 @@ function initPlan() {
 
 // ---------- sheets ----------
 function openSheet(name, tab) {
+  if (name == 'room' && UI.sel && byId(UI.sel)) markSeen('r_' + rootOf(byId(UI.sel)).id);
+  if (name == 'tools') UI.toolQ = '';
   UI.sheet = name; if (tab) UI.tab = tab; renderSheet(); renderSel(); renderCoach();
   const r = name == 'room' && byId(UI.sel), v = VB[UI.lv];
   if (r && v && UI.view == 'plan') { if (v.w < r.w * 1.5) { const k = r.w * 1.5 / v.w; v.w *= k; v.h *= k; } v.x = r.x + r.w / 2 - v.w / 2; v.y = r.y + r.d / 2 - v.h * .21; renderPlan(); }
 }
+const roomTabs = r => { const out = isOut(r); return [['design', 'Size'], ...(out ? [] : [['style', 'Style']]), ['finish', 'Finishes'], ['furnish', 'Furniture'], ...(out ? [] : [['light', 'Lighting'], ['open', 'Doors and windows']]), ['spec', 'Builder spec'], ['chat', 'Ask Claude']]; };
 function closeSheet(quiet) { UI.sheet = null; $('sheet').classList.remove('on'); if ($('v-view3d').classList.contains('half')) { $('v-view3d').classList.remove('half'); if (GLR.ok) GLR.req(); } if (!quiet) { renderSel(); renderCoach(); } }
 const fld = (label, id, f, val, attrs = '') => `<label class="fld" for="${id}">${label}<input id="${id}" data-f="${f}" value="${esc(val)}" ${attrs}></label>`;
 const num = (label, id, f, val, extra = '') => fld(label, id, f, val, `type="number" inputmode="decimal" step="any" ${extra}`);
@@ -5715,7 +5748,7 @@ function renderSheet() {
   } else if (UI.sheet == 'room') {
     const r = byId(UI.sel); if (!r) { closeSheet(); return; }
     const out = isOut(r), t = T(r); title = r.name;
-    const tabs = [['chat', 'Chat'], ['design', 'Design'], ...(out ? [] : [['style', 'Style']]), ['finish', 'Finishes'], ['furnish', 'Furnish'], ...(out ? [] : [['light', 'Lighting'], ['open', 'Doors and windows']]), ['spec', 'Builder spec']];
+    const tabs = roomTabs(r);
     if (!tabs.some(x => x[0] == UI.tab)) UI.tab = 'design';
     h = `<div class="tabs" style="padding:0 0 4px">${tabs.map(([k, n]) => `<button data-a="tab" data-v="${k}" class="${UI.tab == k ? 'on' : ''}">${n}</button>`).join('')}</div>`;
     if (UI.tab == 'chat') { h += chatPanel(r); tall = true; }
@@ -5775,11 +5808,14 @@ function renderSheet() {
       <div class="row">${fld('Add your own', 'f-feat', 'none', '', 'type="text" maxlength="90" placeholder="Floor outlet under the sofa"')}<button class="btn" data-a="addfeat" style="align-self:flex-end">Add</button></div>
       <label class="fld" for="f-notes">Notes for the builder<textarea id="f-notes" data-f="notes">${esc(r.notes)}</textarea></label>`;
     }
+  } else if (UI.sheet == 'tools') {
+    title = 'All tools'; tall = true; h = toolsSheet();
   } else if (UI.sheet == 'menu') {
-    title = 'Project'; tall = true;
+    title = 'Project settings'; tall = true;
     const cloud = CAP.doc ? (CAP.cloud == 'fail' ? 'Could not reach your account storage just now; changes are kept in this browser.' : 'Saved to your account as you work.') : 'Saved in this browser only. Use Save project file to keep a copy.';
     h = `<div class="row">${fld('Project name', 'f-pname', 'pname', P.name, 'type="text" maxlength="50"')}${selc('Units', 'f-units', 'units', [['ft', 'Feet and inches'], ['m', 'Metres']], P.units)}</div><p class="muted">${cloud}</p>
-    <h3>Change the whole house</h3><div class="row"><button class="btn p" data-a="hchat">House chat with Claude</button><button class="btn" data-a="sheet" data-v="household">Your household and must-haves</button><button class="btn" data-a="myopen">My items</button><button class="btn" data-a="sheet" data-v="history">History, undo and redo</button><button class="btn" data-a="sheet" data-v="review">Design review</button><button class="btn" data-a="sheet" data-v="plans">Browse house plans</button><button class="btn" data-a="mirror">Mirror the plan</button><button class="btn" data-a="sheet" data-v="shape">House shape</button><button class="btn" data-a="sheet" data-v="lot">Your real lot</button><button class="btn" data-a="sheet" data-v="energy">Energy and heating</button><button class="btn" data-a="sheet" data-v="takeoff">Materials list</button><button class="btn" data-a="sheet" data-v="structure">Structure</button><button class="btn" data-a="sheet" data-v="drawings">Permit drawings</button><button class="btn" data-a="dldxf">Plans for CAD (DXF)</button><button class="btn" data-a="sheet" data-v="mep">Electrical and heating layout</button><button class="btn" data-a="sheet" data-v="pricing">Itemized budget</button><button class="btn" data-a="sheet" data-v="versions">Design versions${(P.versions || []).length ? ' (' + P.versions.length + ')' : ''}</button></div><h3>Outside finishes</h3><div class="row"><button class="btn p" data-a="xopen">Design the exterior in 3D</button></div><div class="row">${selc('Siding', 'f-sid', 'ext', Object.entries(MATS).filter(([, m]) => m[6].includes('x')).map(([k, m]) => [k, m[0]]), P.ext.siding, 'data-p="siding"')}${selc('Roof', 'f-roof', 'ext', Object.entries(MATS).filter(([, m]) => m[6].includes('r')).map(([k, m]) => [k, m[0]]), P.ext.roof, 'data-p="roof"')}</div>
+    <div class="row"><button class="btn" data-a="tools">All tools</button><span class="muted">Every other tool is listed there, with search.</span></div>
+    <h3>Outside finishes</h3><div class="row"><button class="btn p" data-a="xopen">Design the exterior in 3D</button></div><div class="row">${selc('Siding', 'f-sid', 'ext', Object.entries(MATS).filter(([, m]) => m[6].includes('x')).map(([k, m]) => [k, m[0]]), P.ext.siding, 'data-p="siding"')}${selc('Roof', 'f-roof', 'ext', Object.entries(MATS).filter(([, m]) => m[6].includes('r')).map(([k, m]) => [k, m[0]]), P.ext.roof, 'data-p="roof"')}</div>
     <div class="row">${selc('Roof pitch', 'f-pitch', 'ext', [['0.25', '3 in 12, low'], ['0.333', '4 in 12'], ['0.5', '6 in 12'], ['0.667', '8 in 12'], ['0.833', '10 in 12'], ['1', '12 in 12, steep']], String(P.ext.pitch), 'data-p="pitch"')}<label class="fld" for="f-door" style="flex:none">Front door<input type="color" id="f-door" data-f="ext" data-p="door" value="${P.ext.door}" style="height:38px;width:72px;padding:2px"></label></div>
     <h3>Ceiling height by level</h3><div class="row">${LORD.map(l => num(`${LNAME[l]} (${U()})`, 'f-lv' + l, 'lvh', toU(P.lv[l].h), `data-p="${l}"`)).join('')}</div>
     <h3>Files</h3><div class="row">${CAP.dl ? '<button class="btn" data-a="dljson">Save project file</button>' : ''}<button class="btn" data-a="copyjson">Copy project data</button><button class="btn" data-a="openjson">Open project file</button><button class="btn" data-a="sheet" data-v="import">Paste project data</button>${STANDALONE ? '<button class="btn" data-a="sheet" data-v="apikey">Claude on this phone</button>' : ''}</div>
@@ -5855,6 +5891,7 @@ function renderSheet() {
     <div class="row">${CAP.dl ? `<button class="btn" data-a="${PT.spp ? 'ptsave' : 'snap'}">1. Save the image</button>` : ''}<button class="btn p" data-a="copy" data-id="phototext">2. Copy prompt</button></div>
     <textarea id="phototext" style="min-height:220px" readonly>${esc(photoPrompt())}</textarea>`;
   }
+  if (UI.sheet == 'room' && UI.tab != 'chat') { const r = byId(UI.sel); if (r) h += roomNext(roomTabs(r)); }
   el.className = 'on' + (tall ? ' tall' : '') + (mid ? ' mid' : ''); el.dataset.key = UI.sheet + UI.tab + UI.sel + (UI.xtab || '');
   const half = $('v-view3d').classList.contains('half'); if (half != mid) { $('v-view3d').classList.toggle('half', mid); if (GLR.ok) GLR.req(); }
   el.innerHTML = `<div class="sh-h"><b>${esc(title)}</b><button class="btn" data-a="close">Done</button></div><div class="sh-b">${h}</div>`;
@@ -5934,56 +5971,40 @@ function focusRoom(r) {
 function tourGo(d) {
   const L = tourList(); if (!L.length) return false;
   let i = L.findIndex(r => r.id == UI.sel); i = i < 0 ? 0 : i + d; if (i < 0 || i >= L.length) return false;
-  const r = L[i]; UI.lv = r.lv; UI.sel = r.id; UI.selItem = null; closeSheet(true); focusRoom(r); renderPlan(true); renderCoach(); return true;
+  const r = L[i]; UI.lv = r.lv; UI.sel = r.id; markSeen('r_' + r.id); UI.selItem = null; closeSheet(true); focusRoom(r); renderPlan(true); renderCoach(); return true;
 }
 function goStep(s) {
   UI.step = s; UI.selItem = null;
   if (s == 'outside') { UI.lv = 'S'; UI.sel = null; delete VB.S; }
   else if (s == 'layout') { if (UI.lv == 'S') UI.lv = 'M'; UI.sel = null; delete VB[UI.lv]; }
-  else if (s == 'rooms') { const L = tourList(), r = L.find(q => q.id == UI.sel) || L[0]; if (r) { UI.lv = r.lv; UI.sel = r.id; } }
+  else if (s == 'rooms') { const L = tourList(), r = L.find(q => q.id == UI.sel) || L[0]; if (r) { UI.lv = r.lv; UI.sel = r.id; markSeen('r_' + r.id); } }
   go(STEP_VIEW[s]);
   if (s == 'rooms' && UI.sel) { focusRoom(byId(UI.sel)); renderPlan(true); }
 }
-function renderCoach() {
-  const c = $('coach'), s = UI.step, in3d = UI.view == 'view3d';
-  for (const b of $('nav').children) { const i = STEPS.findIndex(x => x[0] == b.dataset.v), ci = STEPS.findIndex(x => x[0] == s); b.classList.toggle('on', b.dataset.v == s); b.classList.toggle('done', i < ci); }
-  $('b3d').textContent = in3d ? 'Back' : '3D'; $('b3d').classList.toggle('p', in3d);
-  c.hidden = in3d || !!UI.sheet; if (c.hidden) return;
-  let t = '', back = 'Back', next = 'Next', extra = '';
-  if (s == 'brief') { t = `<b>Step 1.</b> Question ${UI.q + 1} of ${NQ}`; back = UI.q ? 'Back' : ''; next = UI.q < NQ - 1 ? 'Next' : 'Build my house'; }
-  else if (s == 'layout') { t = P.rooms.length ? '<b>Step 2.</b> Tap a room, drag to move, drag the yellow corner to resize. Add wing makes it L-shaped.' : '<b>Step 2.</b> Nothing here yet. Answer the Brief questions, or add rooms one at a time.'; back = 'Brief'; next = 'Design each room'; }
-  else if (s == 'rooms') { const L = tourList(), i = L.findIndex(r => r.id == UI.sel); t = L.length ? `<b>Step 3.</b> Room ${Math.max(1, i + 1)} of ${L.length}${i >= 0 ? ': ' + esc(L[i].name) : ''}. Edit it or step inside.` : '<b>Step 3.</b> Add rooms first.'; back = i > 0 ? 'Previous room' : 'Layout'; next = i >= 0 && i < L.length - 1 ? 'Next room' : 'Outside'; }
-  else if (s == 'outside') { t = '<b>Step 4.</b> Yard, deck and driveway go on this plan. Exterior opens style, roof, porch and windows in 3D.'; extra = '<button class="btn p" data-a="xopen">Exterior</button><button class="btn" data-a="sheet" data-v="tech">Technology</button>'; back = 'Rooms'; next = 'Checks'; }
-  else if (s == 'check') { const e = CHK.filter(x => x.sev == 'err').length; t = `<b>Step 5.</b> ${e ? `${e} item${e > 1 ? 's' : ''} to fix. Tap Show to jump to the room.` : 'Nothing blocking. Read the notes, they go to your builder.'}`; back = 'Outside'; next = 'See the budget'; }
-  else if (s == 'budget') { t = '<b>Step 6.</b> A range built from your design. Change the finish level or your budget and watch it move.'; back = 'Check'; next = 'Builder package'; }
-  else { t = '<b>Step 7.</b> Download the package and send it to your designer or builder.'; back = 'Budget'; next = ''; if (indoor().length) extra = '<button class="btn" data-a="sheet" data-v="drawings">Drawings</button><button class="btn" data-a="dldxf">CAD (DXF)</button>'; }
-  if (['layout', 'rooms', 'outside', 'check'].includes(s) && indoor().length) { const E = estimate(); t += ` <button class="est" data-a="step" data-v="budget" aria-label="Open the budget">${fK(E.lo)} to ${fK(E.hi)}</button>`; }
-  if (['layout', 'rooms', 'outside'].includes(s) && P.rooms.length) extra = '<button class="btn" data-a="hchat">Ask Claude</button>' + extra;
-  if (s == 'layout' && indoor().length) extra += '<button class="btn" data-a="sheet" data-v="shape">House shape</button>';
-  if (s == 'check' && indoor().length) extra = '<button class="btn" data-a="sheet" data-v="review">Design review</button>' + extra;
-  if (s == 'outside') extra += '<button class="btn" data-a="sheet" data-v="lot">Your real lot</button>';
-  c.innerHTML = `<p>${t}</p><div class="row">${back ? `<button class="btn" data-a="back">${back}</button>` : ''}${extra}<span style="flex:1"></span>${next ? `<button class="btn p" data-a="next">${next}</button>` : ''}</div>`;
-}
-
 // ---------- the Brief questions ----------
 const oc = (k, v, title, sub, on, multi) => `<button class="opt${on ? ' on' : ''}" data-a="${multi ? 'btog' : 'bset'}" data-k="${k}" data-v="${v}"><b>${title}</b>${sub ? `<span>${sub}</span>` : ''}</button>`;
-function fitNote(b) { const z = briefSize(b), need = z.total + 2 * P.zoning.side + .6; return need > b.lotW + .01 ? `<p class="warnbox">This footprint is ${fL(z.total)} wide and needs a lot of about ${fL(need)} with side setbacks. Your lot is ${fL(b.lotW)}. Pick a smaller size or garage, or change the lot width in question 1.</p>` : ''; }
+function fitNote(b) { const z = briefSize(b), need = z.total + 2 * P.zoning.side + .6; return need > b.lotW + .01 ? `<p class="warnbox">This footprint is ${fL(z.total)} wide and needs a lot of about ${fL(need)} with side setbacks. Your lot is ${fL(b.lotW)}. Pick a smaller size or garage, or change the lot width below.</p>` : ''; }
 function renderBrief() {
   const b = brief(), q = UI.q, z = briefSize(b), H = [];
   H.push(`<div class="prog"><i style="width:${(q + 1) / NQ * 100}%"></i></div>`);
-  if (q == 0) H.push(`<div class="card row" style="margin-bottom:10px"><span style="flex:1;min-width:180px"><b>Tell the app who lives here.</b> Household, pets, hobbies, work from home and your must-haves shape the checks and every Claude suggestion.</span><button class="btn" data-a="sheet" data-v="household">Your household</button></div>`);
-  if (q == 0) H.push(`<div class="card row" style="margin-bottom:10px"><span style="flex:1;min-width:180px"><b>Or start from a ready-made plan.</b> ${PLANS.length} finished designs from Québec contemporary to English heritage, Scandinavian, chalet and farmhouse.</span><button class="btn p" data-a="sheet" data-v="plans">Browse plans</button></div>`);
   if (q == 0) {
-    H.push(`<h2>What are you building?</h2><p class="muted">Describe your household and what matters to you, in your own words. ${CAP.sample ? 'Claude reads it and fills in the next questions for you to check.' : 'The next questions are filled in from the words you use.'} Or skip straight to Next.</p>
-    <textarea id="btext" data-f="btext" placeholder="Two adults, two kids and two dogs. Four bedrooms upstairs, an office, a two-car garage with room for a truck, a home theatre and gym in the basement, a fenced backyard and a deck. Efficient, all-electric, solar later.">${esc(b.text)}</textarea>
-    <div class="row"><button class="btn p" data-a="bfill">${CAP.sample ? 'Fill in my answers with Claude' : 'Fill in my answers'}</button>${CAP.dict ? '<button class="btn" data-a="mic" data-for="btext">Speak</button>' : ''}</div>
-    ${P.example ? '<div class="card row"><p style="flex:1;min-width:170px" class="muted">The plan loaded right now is an example house. You can look around it before you start your own.</p><button class="btn" data-a="step" data-v="layout">See the example</button></div>' : ''}
-    <h3>Your lot</h3><div class="row">${num(`Width along the street (${U()})`, 'b-lw', 'blot', toU(b.lotW), 'data-p="lotW"')}${num(`Depth, street to back (${U()})`, 'b-ld', 'blot', toU(b.lotD), 'data-p="lotD"')}</div><p class="muted">Not sure yet? Leave these. The street is at the bottom of the plan and you can change the lot at any time.</p>`);
+    const has = P.rooms.length && !P.example;
+    H.push(`<h2>How do you want to start?</h2><p class="muted">Pick one. Whatever you choose, every room, size, colour and detail stays editable afterwards.</p>
+    <div class="opts one">
+      <button class="opt" data-a="bstart" data-v="q"><b>Answer 7 quick questions</b><span>Floors, bedrooms, basement, outside, the look and technology. About two minutes. The house is laid out for you.</span></button>
+      <button class="opt${UI.bdesc ? ' on' : ''}" data-a="bstart" data-v="desc"><b>Describe it in your own words</b><span>${CAP.sample ? 'Claude reads it and fills in the questions for you to check.' : 'The questions are filled in from the words you use.'}</span></button>
+      ${UI.bdesc ? `<div class="card"><textarea id="btext" data-f="btext" placeholder="Two adults, two kids and two dogs. Four bedrooms upstairs, an office, a two-car garage with room for a truck, a home theatre and gym in the basement, a fenced backyard and a deck. Efficient, all-electric, solar later.">${esc(b.text)}</textarea>
+      <div class="row"><button class="btn p" data-a="bfill">${CAP.sample ? 'Fill in my answers with Claude' : 'Fill in my answers'}</button>${CAP.dict ? '<button class="btn" data-a="mic" data-for="btext">Speak</button>' : ''}</div></div>` : ''}
+      <button class="opt" data-a="bstart" data-v="plans"><b>Start from a ready-made plan</b><span>${PLANS.length} finished designs, from Québec contemporary to farmhouse, chalet and Scandinavian.</span></button>
+      ${has ? `<button class="opt" data-a="bstart" data-v="keep"><b>Keep working on ${esc(P.name)}</b><span>Go to your floor plan.</span></button>` : P.example ? '<button class="opt" data-a="bstart" data-v="keep"><b>Look around the example house first</b><span>A finished design to explore before you start your own.</span></button>' : ''}
+    </div>
+    <div class="card row" style="margin-top:12px"><span style="flex:1;min-width:180px"><b>Optional: who lives here.</b> Pets, hobbies, working from home and your must-haves shape the checks and Claude's suggestions.</span><button class="btn" data-a="sheet" data-v="household">Your household</button></div>`);
   } else if (q == 1) {
     const ar = (st, sz) => { const [W, D] = SIZES[sz]; return fA(st == 2 ? W * D * 2 : W * D + 7.2 * D); };
     H.push(`<h2>How many floors, and how big?</h2><div class="opts">${oc('storeys', 2, 'Two storeys', 'Bedrooms upstairs. Smaller footprint, more yard.', b.storeys == 2)}${oc('storeys', 1, 'Bungalow', 'Bedrooms on the main floor. No daily stairs.', b.storeys == 1)}</div>
     <h3>Size above ground</h3><div class="opts">${oc('size', 'compact', 'Compact', ar(b.storeys, 'compact'), b.size == 'compact')}${oc('size', 'family', 'Family', ar(b.storeys, 'family'), b.size == 'family')}${oc('size', 'large', 'Large', ar(b.storeys, 'large'), b.size == 'large')}</div>
-    <h3>Attached garage</h3><div class="opts four">${[0, 1, 2, 3].map(n => oc('garage', n, n ? n + (n > 1 ? ' cars' : ' car') : 'None', '', b.garage == n)).join('')}</div>${fitNote(b)}`);
+    <h3>Attached garage</h3><div class="opts four">${[0, 1, 2, 3].map(n => oc('garage', n, n ? n + (n > 1 ? ' cars' : ' car') : 'None', '', b.garage == n)).join('')}</div>
+    <h3>Your lot</h3><div class="row">${num(`Width along the street (${U()})`, 'b-lw', 'blot', toU(b.lotW), 'data-p="lotW"')}${num(`Depth, street to back (${U()})`, 'b-ld', 'blot', toU(b.lotD), 'data-p="lotD"')}</div><p class="muted">Not sure yet? Leave these. You can draw your real lot later.</p>${fitNote(b)}`);
   } else if (q == 2) {
     H.push(`<h2>Bedrooms and the extra room</h2><div class="opts four">${[2, 3, 4, 5].map(n => oc('beds', n, n, 'bedrooms', b.beds == n)).join('')}</div>
     ${b.storeys == 1 && b.beds > 3 ? `<p class="warnbox">A bungalow plan holds 3 bedrooms on the main floor. ${b.basement ? 'The extra one becomes a guest bedroom in the basement.' : 'Add a basement for a guest bedroom, or choose two storeys.'}</p>` : b.beds > 4 ? `<p class="warnbox">${b.basement ? 'Four bedrooms go upstairs and the fifth becomes a guest bedroom in the basement, with its own escape window.' : 'Four bedrooms fit upstairs. Add a basement for the fifth.'}</p>` : ''}
@@ -6051,6 +6072,156 @@ function initMic(d) {
     d.onFinal(({ text }) => { const el = micFor && $(micFor); if (!el) return; el.value = el.value ? el.value + text : text.replace(/^\s+/, ''); el.dispatchEvent(new Event('input', { bubbles: true })); });
     d.onState(({ state }) => { for (const b of document.querySelectorAll('[data-a="mic"]')) b.textContent = state == 'idle' ? 'Speak' : 'Stop listening'; });
   } catch (e) { CAP.dict = null; }
+}
+
+// ---------- Step guide: a short to-do list per step that ticks itself, and a searchable list of every tool ----------
+const seen = () => P.seen || (P.seen = {});
+function markSeen(k) { const s = seen(); if (!s[k]) { s[k] = 1; save(); } }
+const anyRoom = () => { const r = UI.sel && byId(UI.sel); if (r && !isOut(r)) return rootOf(r); const L = tourList(); return L[0] || null; };
+function withRoom(fn) { const r = anyRoom(); if (!r) { toast('Add a room first.'); return; } if (UI.step != 'rooms') goStep('rooms'); UI.lv = r.lv; UI.sel = r.id; UI.selItem = null; focusRoom(r); renderPlan(true); fn(r); }
+const roomTab = tab => () => withRoom(() => openSheet('room', tab));
+const toPlanLv = lv => { if (UI.view != 'plan') goStep(lv == 'S' ? 'outside' : 'layout'); UI.lv = lv; UI.sel = null; renderPlan(true); };
+
+// Each task: [id, label, optional, done(), run()]
+const GUIDE = {
+  layout: ['Floor plan', 'Tap a room to select it, drag it to move, drag the yellow corner to resize. The tabs above the plan switch floors.', [
+    ['start', 'Get a starting layout', 0, () => indoor().length > 0, () => { UI.q = 0; goStep('brief'); }],
+    ['lotsize', 'Enter your lot size and setbacks', 0, () => lotIsPoly(), () => openSheet('zoning')],
+    ['shape', 'Choose the house shape', 1, null, () => openSheet('shape')],
+    ['arrange', 'Move and resize rooms until it feels right', 0, null, null],
+    ['hchat', 'Ask Claude to rework the house', 1, null, () => A.hchat()],
+    ['see3d', 'Look at it in 3D', 0, null, () => A.toggle3d()]]],
+  rooms: ['Each room', 'Go room by room. In each room: size, style, finishes, then furniture. Next room moves you along.', [
+    ['visit', 'Open every room', 0, () => { const L = tourList(); return L.length > 0 && L.every(r => seen()['r_' + r.id]); }, roomTab('design')],
+    ['paint', 'Pick paint colours', 0, null, () => withRoom(() => { UI.colSlot = 'walls'; UI.colPhoto = null; openSheet('colour'); })],
+    ['kitchen', 'Plan the kitchen', 1, null, () => { const k = tourList().find(r => r.type == 'kitchen'); if (!k) { toast('There is no kitchen yet.'); return; } UI.sel = k.id; withRoom(() => A.kpopen()); }],
+    ['myitems', 'Add furniture you already own', 1, () => Object.keys(P.myItems || {}).length > 0, () => A.myopen()],
+    ['ask', 'Ask Claude to change a room', 1, null, roomTab('chat')]]],
+  outside: ['Outside', 'This plan is the whole lot. Yard, deck and driveway sit here; the house style is designed in 3D.', [
+    ['ext', 'Choose the exterior style, roof and windows', 0, null, () => A.xopen()],
+    ['realLot', 'Draw your real lot: survey, slope, trees', 1, () => lotIsPoly(), () => openSheet('lot')],
+    ['yard', 'Add a yard, deck or driveway', 1, () => P.rooms.some(isOut), () => { toPlanLv('S'); openSheet('add'); }],
+    ['tech', 'Pick building technology', 0, () => (P.tech || []).length > 0, () => openSheet('tech')],
+    ['energy', 'Check energy and heating', 0, null, () => openSheet('energy')]]],
+  check: ['Checks', 'Red items must be fixed before a permit. Tap Show on any item to jump to the room.', [
+    ['fix', 'Fix every must-fix item', 0, () => indoor().length > 0 && !CHK.some(c => c.sev == 'err'), null],
+    ['review', 'Read the design review', 0, null, () => openSheet('review')],
+    ['musts', 'Confirm your must-haves', 1, () => (P.musts || []).length > 0 && P.musts.every(mustOK), () => openSheet('household')],
+    ['struct', 'Look over structure', 1, null, () => openSheet('structure')],
+    ['mep', 'Look over electrical and heating', 1, null, () => openSheet('mep')]]],
+  budget: ['Budget', 'The range follows your design. Change the finish level or your budget and watch it move.', [
+    ['level', 'Set your budget and finish level', 0, null, null],
+    ['items', 'Go through the itemized budget', 0, null, () => openSheet('pricing')],
+    ['prio', 'Choose where to splurge or save', 1, () => tourList().some(r => r.prio && r.prio != 'std'), roomTab('design')],
+    ['quotes', 'Enter trade quotes when you get them', 1, () => !!(P.prices && P.prices._q && Object.keys(P.prices._q).length), () => openSheet('pricing')]]],
+  package: ['Send to builder', 'Everything a designer, drafter or builder needs to price and draw your house.', [
+    ['pkg', 'Download the builder package', 0, null, () => A.dlpkg()],
+    ['dwg', 'Look over the permit drawings', 0, null, () => openSheet('drawings')],
+    ['dxf', 'Export plans for CAD', 1, null, () => A.dldxf()],
+    ['photos', 'Take the photo shoot', 1, () => (P.photos || []).length > 0, null],
+    ['file', 'Keep a copy of the project file', 0, null, () => CAP.dl ? A.dljson() : A.copyjson()]]]
+};
+const gTasks = s => (GUIDE[s] || [, , []])[2];
+const gDone = (s, t) => !!(seen()['t_' + s + '_' + t[0]] || (t[3] && t[3]()));
+function gNext(s) { return gTasks(s).find(t => !gDone(s, t) && !t[2]) || gTasks(s).find(t => !gDone(s, t)); }
+
+function renderCoach() {
+  const c = $('coach'), s = UI.step, in3d = UI.view == 'view3d', ci = STEPS.findIndex(x => x[0] == s);
+  for (const b of $('nav').children) { const i = STEPS.findIndex(x => x[0] == b.dataset.v), g = GUIDE[b.dataset.v]; b.classList.toggle('on', b.dataset.v == s); b.classList.toggle('done', g ? gTasks(b.dataset.v).filter(t => !t[2]).every(t => gDone(b.dataset.v, t)) : i < ci); }
+  $('b3d').textContent = in3d ? 'Back' : '3D'; $('b3d').classList.toggle('p', in3d);
+  c.hidden = in3d || !!UI.sheet; if (c.hidden) return;
+  const prevS = STEPS[ci - 1], nextS = STEPS[ci + 1];
+  let back = prevS ? '‹ ' + prevS[1] : '', next = nextS ? nextS[1] + ' ›' : '', body = '', head = '';
+  const est = ['layout', 'rooms', 'outside', 'check'].includes(s) && indoor().length ? (() => { const E = estimate(); return `<button class="est" data-a="step" data-v="budget" aria-label="Open the budget">${fK(E.lo)} to ${fK(E.hi)}</button>`; })() : '';
+  if (s == 'brief') {
+    head = `<span class="g-num">1</span><b>Your brief</b><span class="g-prog">${UI.q ? `Question ${UI.q} of ${NQ - 1}` : 'Start'}</span>`;
+    back = UI.q ? '‹ Back' : ''; next = UI.q == 0 ? '' : UI.q < NQ - 1 ? 'Next ›' : 'Build my house';
+  } else {
+    const g = GUIDE[s], T = gTasks(s), done = T.filter(t => gDone(s, t)).length;
+    if (UI.gseen != s) { UI.gseen = s; UI.gopen = !seen()['g_' + s]; markSeen('g_' + s); }
+    head = `<button class="g-head" data-a="gtoggle" aria-expanded="${!!UI.gopen}"><span class="g-num">${ci + 1}</span><b>${g[0]}</b><span class="g-prog">${done}/${T.length} done <i>${UI.gopen ? '▴' : '▾'}</i></span></button>`;
+    if (s == 'rooms') { const L = tourList(), i = L.findIndex(r => r.id == UI.sel); if (L.length) head += `<span class="g-sub">Room ${Math.max(1, i + 1)} of ${L.length}${i >= 0 ? ': <b>' + esc(L[i].name) + '</b>' : ''}</span>`; if (i > 0) back = '‹ Previous room'; if (i >= 0 && i < L.length - 1) next = 'Next room ›'; }
+    if (UI.gopen) body = `<p class="g-tip">${g[1]}</p><ul class="g-list">${T.map(t => { const d = gDone(s, t); return `<li class="${d ? 'ok' : ''}"><button class="g-chk" data-a="gtick" data-v="${t[0]}" aria-label="${d ? 'Mark not done' : 'Mark done'}">${d ? '✓' : ''}</button>${t[4] ? `<button class="g-t" data-a="gtask" data-v="${t[0]}">${esc(t[1])}${t[2] ? ' <span>optional</span>' : ''}<i>›</i></button>` : `<span class="g-t">${esc(t[1])}${t[2] ? ' <span>optional</span>' : ''}</span>`}</li>`; }).join('')}</ul>`;
+    else { const n = gNext(s); if (n) body = `<div class="g-next"><span>Next: <b>${esc(n[1])}</b></span>${n[4] ? `<button class="btn" data-a="gtask" data-v="${n[0]}">Go</button>` : `<button class="btn" data-a="gtick" data-v="${n[0]}">Done</button>`}</div>`; else body = `<div class="g-next"><span>Everything here is done. ${nextS ? 'On to ' + nextS[1].toLowerCase() + '.' : 'Your package is ready to send.'}</span></div>`; }
+  }
+  c.innerHTML = `<div class="g-top">${head}${est}</div>${body}<div class="row g-nav">${back ? `<button class="btn" data-a="back">${back}</button>` : ''}<button class="btn" data-a="tools">All tools</button><span style="flex:1"></span>${next ? `<button class="btn p" data-a="next">${next}</button>` : ''}</div>`;
+}
+function gTask(id) { const s = UI.step, t = gTasks(s).find(x => x[0] == id); if (!t || !t[4]) return; markSeen('t_' + s + '_' + id); t[4](); renderCoach(); }
+function gTick(id) { const s = UI.step, t = gTasks(s).find(x => x[0] == id); if (!t) return; const k = 't_' + s + '_' + id, S = seen(); if (gDone(s, t) && S[k]) delete S[k]; else if (!gDone(s, t)) S[k] = 1; else toast('This one ticks itself when it is done in the design.'); save(); renderCoach(); }
+
+// ---------- every tool, grouped by step, searchable ----------
+// [group, label, words people might search for, run]
+const TOOLS = [
+  ['Start', 'Answer the guided questions', 'brief wizard start new questionnaire', () => { UI.q = 1; goStep('brief'); }],
+  ['Start', 'Describe your house in your own words', 'claude text describe brief', () => { UI.q = 0; UI.bdesc = 1; goStep('brief'); }],
+  ['Start', 'Browse ready-made house plans', 'catalogue plans designs templates', () => openSheet('plans')],
+  ['Start', 'Your household and must-haves', 'family kids pets dog hobbies work from home profile needs', () => openSheet('household')],
+  ['Start', 'Load the example house', 'sample demo', () => A.loadex()],
+  ['Start', 'Start over on an empty lot', 'blank new clear reset', () => A.newblank()],
+  ['Layout', 'Add a room', 'new room bedroom bathroom closet', () => { toPlanLv(UI.lv == 'S' ? 'M' : UI.lv); openSheet('add'); }],
+  ['Layout', 'House shape: L, T, U, wings', 'footprint wing garage forward angled', () => openSheet('shape')],
+  ['Layout', 'Select several rooms, copy and paste', 'multi select copy paste duplicate align move group', () => { toPlanLv(UI.lv == 'S' ? 'M' : UI.lv); A.mstart(); }],
+  ['Layout', 'Mirror the plan', 'flip reverse', () => A.mirror()],
+  ['Layout', 'House chat with Claude', 'ai change whole house ask', () => A.hchat()],
+  ['Layout', 'Lot size and setbacks', 'zoning bylaw lot width depth setback coverage height slope north', () => openSheet('zoning')],
+  ['Layout', 'Ceiling heights, units and project name', 'settings feet metres name ceiling height', () => openSheet('menu')],
+  ['Layout', 'History: undo and redo', 'undo redo back revert', () => openSheet('history')],
+  ['Layout', 'Design versions', 'save version compare snapshot', () => openSheet('versions')],
+  ['Layout', 'See it in 3D', '3d view model walk', () => { if (UI.view != 'view3d') A.toggle3d(); }],
+  ['Layout', 'Edit in 3D: tap to move, paint, resize', '3d edit paint move', () => { if (UI.view != 'view3d') A.toggle3d(); if (!UI.edit3d) A.e3on(); }],
+  ['Rooms', 'Room size, ceiling and angled corner', 'width depth dimensions ceiling vault tray chamfer', roomTab('design')],
+  ['Rooms', 'Room style', 'style look modern scandinavian my style', roomTab('style')],
+  ['Rooms', 'Floors, walls and finishes', 'flooring tile hardwood carpet counters', roomTab('finish')],
+  ['Rooms', 'Paint colours and codes', 'paint colour color benjamin moore sherwin williams farrow hex', () => withRoom(() => { UI.colSlot = 'walls'; UI.colPhoto = null; openSheet('colour'); })],
+  ['Rooms', 'Furniture', 'furnish sofa bed table add item', roomTab('furnish')],
+  ['Rooms', 'Furniture you already own', 'my items own furniture custom', () => A.myopen()],
+  ['Rooms', 'Lighting', 'lights pot lights dimmer', roomTab('light')],
+  ['Rooms', 'Doors and windows', 'door window opening', roomTab('open')],
+  ['Rooms', 'Kitchen planner', 'kitchen island cabinets appliances', () => { const k = tourList().find(r => r.type == 'kitchen'); if (!k) { toast('There is no kitchen yet.'); return; } UI.sel = k.id; withRoom(() => A.kpopen()); }],
+  ['Rooms', 'Room chat with Claude, inspiration photos', 'ai claude photo inspiration ask', roomTab('chat')],
+  ['Rooms', 'Builder spec for a room', 'spec features notes outlets', roomTab('spec')],
+  ['Outside', 'Exterior style, roof, porch and windows', 'exterior facade siding roof porch dormer windows style', () => A.xopen()],
+  ['Outside', 'Your real lot: survey, lot lines, slope, trees', 'survey lot polygon grade trees underlay', () => openSheet('lot')],
+  ['Outside', 'Yard, deck, patio, driveway', 'outdoor yard deck patio fence driveway garden pool', () => { toPlanLv('S'); openSheet('add'); }],
+  ['Outside', 'Building technology', 'heat pump solar ev erv triple glazing tech', () => openSheet('tech')],
+  ['Outside', 'Energy and heating', 'energy code tier heat loss insulation efficiency', () => openSheet('energy')],
+  ['Check', 'Code checks', 'code building permit errors checks', () => goStep('check')],
+  ['Check', 'Design review', 'review sun light rooms lot quotes', () => openSheet('review')],
+  ['Check', 'Structure: beams and snow loads', 'structure beam joist snow load', () => openSheet('structure')],
+  ['Check', 'Electrical and heating layout', 'electrical outlets panel circuits hvac mep', () => openSheet('mep')],
+  ['Budget', 'Budget and finish level', 'cost price estimate budget finish', () => goStep('budget')],
+  ['Budget', 'Itemized budget and trade quotes', 'itemized quotes trades line items', () => openSheet('pricing')],
+  ['Budget', 'Cost rates', 'rates per square foot', () => openSheet('rates')],
+  ['Budget', 'Materials list', 'takeoff lumber materials quantities', () => openSheet('takeoff')],
+  ['Send', 'Builder package', 'download package pdf print send', () => goStep('package')],
+  ['Send', 'Permit drawings', 'drawings plans elevations section permit', () => openSheet('drawings')],
+  ['Send', 'Plans for CAD (DXF)', 'dxf cad autocad export', () => A.dldxf()],
+  ['Send', 'Photo shoot and walk-through video', 'photos render video walkthrough', () => goStep('package')],
+  ['Project', 'Save the project file', 'save backup export json', () => CAP.dl ? A.dljson() : A.copyjson()],
+  ['Project', 'Open a project file', 'open load import file', () => A.openjson()],
+  ['Project', 'Copy or paste project data', 'transfer copy paste move phone app', () => openSheet('import')],
+  ['Project', 'Project settings', 'settings name units siding roof pitch door ceiling', () => openSheet('menu')],
+  ...(STANDALONE ? [['Project', 'Connect Claude on this phone', 'api key claude ai offline', () => openSheet('apikey')]] : [])
+];
+function toolList() {
+  const q = (UI.toolQ || '').toLowerCase().trim(), w = q.split(/\s+/).filter(Boolean);
+  const hit = t => w.every(x => (t[1] + ' ' + t[2] + ' ' + t[0]).toLowerCase().includes(x));
+  const item = i => `<button class="tool" data-a="tool" data-v="${i}"><b>${esc(TOOLS[i][1])}</b></button>`;
+  const score = t => w.reduce((a, x) => a + (t[1].toLowerCase().startsWith(x) ? 4 : t[1].toLowerCase().includes(x) ? 2 : 1), 0);
+  if (w.length) { const L = TOOLS.map((t, i) => i).filter(i => hit(TOOLS[i])).sort((a, b) => score(TOOLS[b]) - score(TOOLS[a])); return L.length ? L.map(item).join('') : `<p class="muted">Nothing matches "${esc(q)}". Try another word, like paint, roof, stairs or budget.</p>`; }
+  const here = (STEPS.find(s => s[0] == UI.step) || [])[1];
+  const groups = [...new Set(TOOLS.map(t => t[0]))].sort((a, b) => (b == here) - (a == here));
+  return groups.map(g => `<h3>${g}${g == here ? ' <span class="muted">(this step)</span>' : ''}</h3><div class="tools">${TOOLS.map((t, i) => t[0] == g ? item(i) : '').join('')}</div>`).join('');
+}
+function toolsSheet() { return `<input id="toolq" type="search" placeholder="What do you want to do? paint, roof, stairs…" value="${esc(UI.toolQ || '')}" autocomplete="off"><div id="toollist">${toolList()}</div>`; }
+function runTool(i) { const t = TOOLS[+i]; if (!t) return; closeSheet(true); UI.toolQ = ''; t[3](); renderCoach(); }
+
+// a "next" button at the bottom of each room tab, so a room can be done top to bottom
+function roomNext(tabs) {
+  const i = tabs.findIndex(x => x[0] == UI.tab), n = tabs[i + 1];
+  if (n && UI.tab != 'chat') return `<div class="row g-roomnav"><span style="flex:1"></span><button class="btn p" data-a="tab" data-v="${n[0]}">Next: ${n[1]} ›</button></div>`;
+  if (UI.step == 'rooms') { const L = tourList(), j = L.findIndex(r => r.id == UI.sel); if (j >= 0 && j < L.length - 1) return `<div class="row g-roomnav"><span style="flex:1"></span><button class="btn p" data-a="roomnext">Next room: ${esc(L[j + 1].name)} ›</button></div>`; }
+  return '';
 }
 
 // ---------- Budget view ----------
@@ -6287,7 +6458,10 @@ async function copyText(t) { try { await navigator.clipboard.writeText(t); toast
 const cur = () => byId(UI.sel);
 function refresh() { renderHeader(); renderCoach(); if (UI.view == 'brief') renderBrief(); if (UI.view == 'plan') renderPlan(true); if (UI.sheet) renderSheet(); if (UI.view == 'checks') renderChecks(); if (UI.view == 'budget') renderBudget(); if (UI.view == 'package') renderPkg(); if (UI.view == 'view3d') show3D(); }
 const A = {
-  go: t => go(t.dataset.v), menu: () => openSheet('menu'), add: () => openSheet('add'), zoning: () => openSheet('zoning'),
+  go: t => go(t.dataset.v), menu: () => openSheet('tools'), tools: () => openSheet('tools'), tool: t => runTool(t.dataset.v),
+  gtoggle: () => { UI.gopen = !UI.gopen; renderCoach(); }, gtask: t => gTask(t.dataset.v), gtick: t => gTick(t.dataset.v),
+  roomnext: () => { const tab = 'design'; if (tourGo(1)) { UI.tab = tab; openSheet('room', tab); } },
+  bstart: t => { const v = t.dataset.v; if (v == 'q') { UI.bdesc = 0; UI.q = 1; renderBrief(); renderCoach(); $('brief').parentNode.scrollTop = 0; } else if (v == 'desc') { UI.bdesc = UI.bdesc ? 0 : 1; renderBrief(); setTimeout(() => $('btext') && $('btext').focus(), 50); } else if (v == 'plans') openSheet('plans'); else goStep('layout'); }, add: () => openSheet('add'), zoning: () => openSheet('zoning'),
   step: t => { if (t.dataset.v == 'brief') { UI.q = 0; } goStep(t.dataset.v); }, sheet: t => openSheet(t.dataset.v),
   next: () => { const s = UI.step; if (s == 'brief') { if (UI.q < NQ - 1) { if ($('btext')) brief().text = $('btext').value; UI.q++; renderBrief(); renderCoach(); $('brief').parentNode.scrollTop = 0; } else buildHouse(); } else if (s == 'layout') goStep('rooms'); else if (s == 'rooms') { if (!tourGo(1)) goStep('outside'); } else if (s == 'outside') goStep('check'); else if (s == 'check') goStep('budget'); else if (s == 'budget') goStep('package'); },
   back: () => { const s = UI.step; if (s == 'brief') { if (UI.q > 0) { UI.q--; renderBrief(); renderCoach(); $('brief').parentNode.scrollTop = 0; } } else if (s == 'layout') { UI.q = 0; goStep('brief'); } else if (s == 'rooms') { if (!tourGo(-1)) goStep('layout'); } else if (s == 'outside') goStep('rooms'); else if (s == 'check') goStep('outside'); else if (s == 'budget') goStep('check'); else goStep('budget'); },
@@ -6506,7 +6680,7 @@ function historySheet() {
 }
 document.addEventListener('click', e => { const t = e.target.closest('[data-a]'); if (t && A[t.dataset.a]) { if (!['undo', 'redo', 'histgo', 'histfwd', 'sheet', 'close', 'rvtab', 'dwpick', 'dwzoom', 'tab', 'lv'].includes(t.dataset.a)) UI.lastAct = t.dataset.a; A[t.dataset.a](t, e); } });
 document.addEventListener('change', e => { const t = e.target.closest('[data-f]'); if (t && F[t.dataset.f] && t.dataset.f != 'gtime') { UI.lastAct = 'f:' + t.dataset.f; F[t.dataset.f](t.value, t); } });
-document.addEventListener('input', e => { const t = e.target, f = t.dataset && t.dataset.f; if (f == 'opp') F.opp(t.value, t, true); else if (f == 'gtime') F.gtime(t.value); else if (f == 'addtext') UI.addText = t.value; else if (f == 'btext') brief().text = t.value; else if (f == 'chatdraft') UI.chatDraft = t.value; else if (f == 'hchatdraft') UI.hchatDraft = t.value; });
+document.addEventListener('input', e => { const t = e.target, f = t.dataset && t.dataset.f; if (t.id == 'toolq') { UI.toolQ = t.value; $('toollist').innerHTML = toolList(); return; } if (f == 'opp') F.opp(t.value, t, true); else if (f == 'gtime') F.gtime(t.value); else if (f == 'addtext') UI.addText = t.value; else if (f == 'btext') brief().text = t.value; else if (f == 'chatdraft') UI.chatDraft = t.value; else if (f == 'hchatdraft') UI.hchatDraft = t.value; });
 document.addEventListener('paste', e => { const box = e.target.closest && e.target.closest('[data-pastefor]'); if (!box) return; const items = [...((e.clipboardData && e.clipboardData.items) || [])], it = items.find(i => i.kind == 'file' && /^image\//.test(i.type)); e.preventDefault(); if (it) imgPicked(it.getAsFile(), box.dataset.pastefor); else toast('No photo on the clipboard. Copy a photo first, then paste it here.'); });
 document.addEventListener('input', e => { const box = e.target.closest && e.target.closest('[data-pastefor]'); if (!box) return; const img = box.querySelector('img'); box.innerHTML = ''; if (!img) return; const im = new Image(); im.crossOrigin = 'anonymous'; im.onload = () => { const c = document.createElement('canvas'), k = Math.min(1, 1600 / Math.max(im.width, im.height)); c.width = Math.round(im.width * k); c.height = Math.round(im.height * k); c.getContext('2d').drawImage(im, 0, 0, c.width, c.height); c.toBlob(b => b && imgPicked(new File([b], 'pasted.jpg', { type: 'image/jpeg' }), box.dataset.pastefor), 'image/jpeg', .85); }; im.onerror = () => toast('That photo could not be pasted here. Try the browser link below.'); im.src = img.src; });
 document.addEventListener('change', e => { const t = e.target; if (!t.matches || !t.matches('input[data-imgfor]')) return; const f = t.files && t.files[0]; t.value = ''; if (f) imgPicked(f, t.dataset.imgfor); });
