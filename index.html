@@ -143,6 +143,10 @@ nav button.done i{background:var(--ok);border-color:var(--ok);color:var(--panel)
 @media (prefers-color-scheme:dark){ :root:not([data-theme="light"]) .btn.p, :root:not([data-theme="light"]) .fab{color:#0d1829} }
 :root[data-theme="dark"] .btn.p{color:#0d1829}
 #gl{flex:1;width:100%;min-height:0;display:block;touch-action:none;background:#8fb1d8}
+#ptlive{position:absolute;left:0;top:0;width:100%;pointer-events:none;opacity:0;transition:opacity .45s;image-rendering:auto}
+#ptlive.on{opacity:1} #ptlive[hidden]{display:none}
+.livest{position:absolute;right:12px;top:56px;background:rgba(13,24,41,.7);color:#fff;font-size:12px;padding:3px 9px;border-radius:99px;pointer-events:none}
+.livest[hidden]{display:none}
 .gbar{position:absolute;left:0;right:0;padding:8px 12px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;pointer-events:none}
 .gbar>*{pointer-events:auto}
 .gbar.top{top:0} .gbar.bot{bottom:0;background:linear-gradient(transparent,rgba(0,0,0,.45));padding-top:28px;color:#fff}
@@ -153,6 +157,8 @@ select,input[type=text],input[type=number],textarea{background:var(--panel);bord
 textarea{width:100%;resize:vertical;min-height:72px}
 input[type=range]{accent-color:var(--accent);flex:1;min-width:90px}
 .gbar.bot .btn{background:rgba(255,255,255,.92);color:#15233b;border-color:transparent}
+.gbar.bot .btn{padding:7px 10px;font-size:14px}
+.gbar.bot .btn.p{background:var(--accent);color:#fff}
 .gbar.bot label{font-size:13px;font-weight:600;font-variant-numeric:tabular-nums;text-shadow:0 1px 2px #000}
 [hidden]{display:none!important}
 .hint{position:absolute;left:50%;bottom:124px;transform:translateX(-50%);background:rgba(13,24,41,.75);color:#fff;padding:4px 10px;border-radius:99px;font-size:12.5px;white-space:nowrap;pointer-events:none}
@@ -286,11 +292,11 @@ table.cmp{width:100%;table-layout:fixed}table.cmp tr>*:first-child{width:27%}tab
       <div id="selbar"></div><div id="lotbar"></div>
     </section>
     <section id="v-view3d">
-      <canvas id="gl"></canvas>
+      <canvas id="gl"></canvas><canvas id="ptlive" hidden></canvas><div id="glivest" class="livest" hidden></div>
       <div class="gbar top"><div class="seg" id="gmode"></div><select id="gsel" data-f="gsel" aria-label="What to show"></select></div>
       <div class="hint" id="ghint"></div>
       <div id="ptwrap" hidden><div id="ptstat"><span id="pttext">Starting</span><button class="btn" data-a="ptclose">Close</button></div><div id="ptbar"><i></i></div><canvas id="pt"></canvas><img id="ptimg" alt="Photo render of the current view" hidden><div id="ptbtns"><button class="btn" data-a="ptsave" id="ptsave">Save photo</button><button class="btn" data-a="ptmore">More detail</button><button class="btn" data-a="photo">Make an AI photo from this</button></div></div>
-      <div id="g3bar" class="g3bar" hidden></div><div class="gbar bot"><label for="gtime" id="gtl"></label><input type="range" id="gtime" min="5" max="21" step="0.25" data-f="gtime"><select id="gmonth" data-f="gmonth" aria-label="Month"><option value="1">Jan</option><option value="2">Feb</option><option value="3">Mar</option><option value="4">Apr</option><option value="5">May</option><option value="6">Jun</option><option value="7">Jul</option><option value="8">Aug</option><option value="9">Sep</option><option value="10">Oct</option><option value="11">Nov</option><option value="12">Dec</option></select><button class="btn" data-a="e3on" id="gedit">Edit</button><button class="btn" data-a="lights" id="glights">Lights on</button><button class="btn p" data-a="render">Photo render</button><button class="btn" data-a="snap" id="gsnap">Save image</button></div>
+      <div id="g3bar" class="g3bar" hidden></div><div class="gbar bot"><label for="gtime" id="gtl"></label><input type="range" id="gtime" min="5" max="21" step="0.25" data-f="gtime"><select id="gmonth" data-f="gmonth" aria-label="Month"><option value="1">Jan</option><option value="2">Feb</option><option value="3">Mar</option><option value="4">Apr</option><option value="5">May</option><option value="6">Jun</option><option value="7">Jul</option><option value="8">Aug</option><option value="9">Sep</option><option value="10">Oct</option><option value="11">Nov</option><option value="12">Dec</option></select><button class="btn" data-a="e3on" id="gedit">Edit</button><button class="btn" data-a="lights" id="glights">Lights on</button><button class="btn" data-a="livetog" id="glive">Realistic</button><button class="btn" data-a="render">Photo</button><button class="btn" data-a="snap" id="gsnap">Save</button></div>
     </section>
     <section id="v-checks"><div class="scroll"><div class="wrap" id="checks"></div></div></section>
     <section id="v-budget"><div class="scroll"><div class="wrap" id="budget"></div></div></section>
@@ -360,7 +366,7 @@ const MATS = {
   metal_black: ['Standing seam metal, black', 14, '#2a2c2f', '#2a2c2f', .3, .45, 'r'],
   metal_red: ['Standing seam metal, red', 14, '#7d2a25', '#7d2a25', .3, .45, 'r'],
   // outdoor surfaces
-  grass: ['Lawn', 8, '#516f3b', '#3b5a2d', 1, 1, 'o'],
+  grass: ['Lawn', 8, '#5b6c3c', '#3e502b', 1, 1, 'o'],
   cedar_deck: ['Cedar decking', 1, '#b07c4f', '#96663d', .7, .14, 'o'],
   composite: ['Composite decking, grey', 1, '#7d7f82', '#6c6e71', .7, .14, 'o'],
   pavers: ['Concrete pavers', 6, '#b0aba2', '#87837b', .85, 1.4, 'o'],
@@ -413,7 +419,7 @@ const MATS = {
   garage_door: ['Garage door', 7, '#e9e8e3', '#e9e8e3', .5, .53, '-'],
   soffit: ['Soffit', 0, '#e6e5df', '#e6e5df', .8, 1, '-'],
   road: ['Road', 12, '#2e3033', '#4a4d51', .9, 1, '-'],
-  dirt: ['Ground beyond lot', 8, '#4d6a3a', '#3a562d', 1, 2.5, '-']
+  dirt: ['Ground beyond lot', 8, '#56663b', '#3d4e2b', 1, 2.5, '-']
 };
 
 // Items: key:{n name, c category, w,d,h metres, col default colour material, parts:[x0,y0,z0,x1,y1,z1,mat] normalised to w,d,h}
@@ -2519,6 +2525,7 @@ async function shootRun() {
   if (!PT.init($('pt'))) { toast(PT.why || 'The photo render is not available on this device.', 5000); return; }
   const [, W, H, passes] = SHOOT_Q[SHOOT.q], keepHour = GLR.env.hour, keepLights = GLR.env.lightsOn;
   SHOOT.running = true; SHOOT.cancel = false; let saveFail = 0; const fresh = [];
+  if (typeof liveStop == 'function') liveStop();
   const wrap = $('ptwrap'); wrap.hidden = false; wrap.classList.add('shoot'); const cb = document.querySelector('#ptstat [data-a="ptclose"]'); if (cb) cb.textContent = 'Stop'; $('ptimg').hidden = true; $('pt').hidden = false;
   let done = 0;
   for (const [i, t] of T0.entries()) {
@@ -2579,6 +2586,7 @@ async function walkRun() {
   const stream = cv.captureStream(0), vtrack = stream.getVideoTracks()[0], chunks = [], rec = new MediaRecorder(stream, { mimeType: mime, videoBitsPerSecond: 6e6 });
   rec.ondataavailable = e => { if (e.data && e.data.size) chunks.push(e.data); };
   const stopped = new Promise(f => rec.onstop = f);
+  if (typeof liveStop == 'function') liveStop();
   WALK.running = true; WALK.cancel = false; const keepLights = GLR.env.lightsOn; GLR.env.lightsOn = true; GLR.sunDirty();
   rec.start(500);
   const total = shots.reduce((s, q) => s + q.t, 0), C = GLR.cam; let done = 0;
@@ -4927,7 +4935,7 @@ function buildRoom(g, r, ops, showCeil, lights) {
     if (h.x0 > r.x + .1 && h.dir != 'W') gd(0, h.x0, h.y0, h.y1); if (h.x1 < x1 - .1 && h.dir != 'E') gd(0, h.x1, h.y0, h.y1);
     if (h.y0 > r.y + .1 && h.dir != 'N') gd(1, h.y0, h.x0, h.x1); if (h.y1 < z1 - .1 && h.dir != 'S') gd(1, h.y1, h.x0, h.x1);
   }
-  const wm = mat(r.walls), trim = mat('trim');
+  const wm = mat(r.walls), trim = mat('trim'), WL = [];
   for (const w of 'NESW') {
     const e = edge(r, w), inw = (w == 'N' || w == 'W') ? 1 : -1;
     const wo = ops.filter(o => o.h == e.h && Math.abs(o.c - e.c) < EPS && o.b > e.a && o.a < e.b);
@@ -4946,6 +4954,12 @@ function buildRoom(g, r, ops, showCeil, lights) {
     for (let o of wo) {
       if (o.r !== r || o.join) continue;
       const m = (o.a + o.b) / 2, isExt = ext.some(v => m > v[0] && m < v[1]), ca = e.c - inw * (isExt ? .16 : .06), cb = e.c + inw * .06, f = .04;
+      if (o.o) trimOpening(g, e, o, inw, isExt, r, t);
+      if (isExt && o.door && o.o && o.o.kind != 'garage' && r.lv != 'B' && o.y0 < 1.5) { // porch light beside the door
+        const sa = o.b + .28, so = e.c - inw * .19, sy = o.y0 + 1.95, sp = e.h ? [sa, sy, so - inw * .07] : [so - inw * .07, sy, sa], lm = mat('matte_black');
+        if (e.h) { g.box(sa - .08, sy - .16, so, sa + .08, sy + .14, so - inw * .1, lm); g.box(sa - .055, sy - .12, so - inw * .02, sa + .055, sy + .08, so - inw * .09, mat('glow_warm')); } else { g.box(so, sy - .16, sa - .08, so - inw * .1, sy + .14, sa + .08, lm); g.box(so - inw * .02, sy - .12, sa - .055, so - inw * .09, sy + .08, sa + .055, mat('glow_warm')); }
+        const PL = { p: sp, c: [1.4, 1.0, .6], a: [sp[0] - 8, sp[1] - 4, sp[2] - 8], b: [sp[0] + 8, sp[1] + 2, sp[2] + 8], d: -1, out: 1 }; lights.push(PL); lights.fine.push({ p: sp, c: [.35, .25, .15], a: PL.a, b: PL.b }); }
+      if (isExt && o.o && (!o.door || ['slider', 'french', 'double', 'bifold'].includes(o.o.kind))) { const yc = (o.y0 + o.y1) / 2; WL.push({ p: e.h ? [m, yc, e.c + inw * .2] : [e.c + inw * .2, yc, m], n: e.h ? [0, 0, inw] : [inw, 0, 0], s: (o.b - o.a) * (o.y1 - o.y0) * (r.lv == 'B' ? .5 : 1) }); }
       const cm = isExt ? e.c - inw * .1 : e.c, fr = isExt && (!o.door || o.o.kind == 'slider') ? mat(P.ext.frame || 'trim') : trim;
       if (!o.door || o.o.kind != 'opening' || isExt) { g.along(e.h, o.a, o.a + f, ca, cb, o.y0, o.y1, fr); g.along(e.h, o.b - f, o.b, ca, cb, o.y0, o.y1, fr); if (!(!o.door && ['arched', 'round'].includes(o.o.style))) g.along(e.h, o.a, o.b, ca, cb, o.y1 - f, o.y1, fr); }
       if (o.door && o.o.tr && o.o.kind != 'garage') { const yt = o.y1 - .45; g.along(e.h, o.a, o.b, ca, cb, yt - .02, yt + .03, fr); g.along(e.h, o.a + f, o.b - f, cm - .008, cm + .008, yt + .03, o.y1 - f, gl); o = { ...o, y1: yt + .03 }; }
@@ -5011,16 +5025,19 @@ function buildRoom(g, r, ops, showCeil, lights) {
   buildItems(g, r, fy, ceilY(r));
   // ceiling lights
   const big = r.w * r.d > 26, lx = r.w >= r.d, n = big ? 2 : 1;
+  const winA = r.wins.reduce((s, w) => s + w.w * w.h, 0) + r.doors.filter(d => ['slider', 'french', 'double', 'bifold'].includes(d.kind)).reduce((s, d) => s + d.w * 1.9, 0) + (r.sky || []).length * .9;
+  const dayF = clamp(winA / Math.max(r.w * r.d, 1) * 2.4, .04, .95) * (r.lv == 'B' ? .6 : 1);
   const col = lightColor(r), fx = roomLights(r), cfx = fx.filter(i => ITEMS[i.k].top), la = [x0 - .01, fy - .2, z0 - .01], lb = [x1 + .01, topY(r), z1 + .01];
   const I = cfx.length ? clamp(cfx.reduce((s, i) => s + ITEMS[i.k].lm, 0) / 1900, .25, 3.4) / n : (t.dim ? .5 : 1) * (.75 + Math.min(r.w * r.d, 30) * .045) / (big ? 1.4 : 1);
   for (let i = 0; i < n; i++) {
     const cx = x0 + (lx ? r.w * (i + .5) / n : r.w / 2), cz = z0 + (lx ? r.d / 2 : r.d * (i + .5) / n);
-    const L = { p: [cx, ceilY(r) - .35, cz], c: col.map(v => v * I), a: la, b: lb }; lights.push(L);
-    if (!cfx.length) { lights.fine.push(L); if (showCeil && !t.dim) g.box(cx - .22, ceilY(r) - .035, cz - .22, cx + .22, ceilY(r), cz + .22, mat('glow_warm')); }
+    const L = { p: [cx, ceilY(r) - .35, cz], c: col.map(v => v * I), a: la, b: lb, d: dayF }; lights.push(L);
+    if (!cfx.length) { lights.fine.push(L); if (showCeil && !t.dim) { const nx = Math.max(1, Math.round(r.w / 1.9)), nz = Math.max(1, Math.round(r.d / 1.9)), cy = ceilY(r), rim = mat('trim'), gm = mat('glow_warm'); if (i == 0) for (let a = 0; a < nx; a++) for (let b2 = 0; b2 < nz; b2++) { const px = x0 + r.w * (a + .5) / nx, pz = z0 + r.d * (b2 + .5) / nz; g.box(px - .085, cy - .012, pz - .085, px + .085, cy, pz + .085, rim); g.box(px - .06, cy - .016, pz - .06, px + .06, cy - .011, pz + .06, gm); } } }
   }
+  for (const w of WL) lights.win.push({ ...w, a: la, b: lb });
   for (const it of fx) {
     const d = ITEMS[it.k], k = d.lm / 1900, c = d.lc ? d.lc.map(v => v * k * (r.lb || 1)) : col.map(v => v * k), z = it.z != null ? it.z : d.z || 0;
-    const L = { p: [r.x + it.x, d.top ? ceilY(r) - d.h - .07 : fy + z + (d.lz || d.h * (d.h > .3 ? .88 : .5)), r.y + it.y], c, a: la, b: lb };
+    const L = { p: [r.x + it.x, d.top ? ceilY(r) - d.h - .07 : fy + z + (d.lz || d.h * (d.h > .3 ? .88 : .5)), r.y + it.y], c, a: la, b: lb, d: dayF };
     lights.fine.push(L); if (!d.top) lights.push(L);
   }
 }
@@ -5076,7 +5093,7 @@ function buildZone(g, z) {
   buildItems(g, z, y, y + 3);
 }
 function buildRoofs(g) {
-  const rf = roofs(), sol = solarLayout(rf), big = mainRoof(rf);
+  const rf = roofs(), sol = solarLayout(rf), big = mainRoof(rf), geoms = classicRoof() ? rf.map(r => [r, roofGeom(r)]) : [];
   for (const r of rf) {
     if (!classicRoof()) { buildRoofAlt(g, r); continue; }
     const G = roofGeom(r), { e, p, x, U0, U1, v0, v1, vm, ye, yr, ua, ub } = G, nl = Math.hypot(1, p);
@@ -5092,6 +5109,8 @@ function buildRoofs(g) {
       if (hip) { const n = nrmU(s); g.tri(pt(u, v0 - e, ye), pt(u, v1 + e, ye), pt(ur, vm, yr), n, mat(P.ext.roof, null, x)); g.tri(pt(u, v0 - e, ye - .04), pt(u, v1 + e, ye - .04), pt(ur, vm, yr - .04), n.map(v => -v), sf); g.quad(pt(u, v0 - e, ye - .18), pt(u, v1 + e, ye - .18), pt(u, v1 + e, ye + .01), pt(u, v0 - e, ye + .01), x ? [s, 0, 0] : [0, 0, s], tr); }
       else if (!ab) { const wu = (x ? (s < 0 ? r.x0 : r.x1) : (s < 0 ? r.y0 : r.y1)) + s * .16; g.tri(pt(wu, v0 - .16, r.base), pt(wu, v1 + .16, r.base), pt(wu, vm, yr - .04), x ? [s, 0, 0] : [0, 0, s], sd); }
     }
+    buildGutters(g, r, G, rf, geoms);
+    if (ub - ua > .3) { const rc = mat(P.ext.roof, null, !x), a = pt(ua, vm - .14, yr - .03), b2 = pt(ub, vm + .14, yr + .045); g.box(a[0], a[1], a[2], b2[0], b2[1], b2[2], rc); }
     for (const arr of sol) if (arr.r === r) { const s = x ? 1 : -1, n = nrm(s), pm = mat('solar'), P4 = (u, h) => { const q = pt(u, vm + s * h, yr - h * p); return [q[0] + n[0] * .07, q[1] + n[1] * .07, q[2] + n[2] * .07]; }; for (const q of arr.panels) g.quad(P4(q.u, q.h0), P4(q.u + 1, q.h0), P4(q.u + 1, q.h1), P4(q.u, q.h1), n, pm); }
     if (P.ext.cupola && big && r.x0 == big.x0 && r.y0 == big.y0 && r.lv == big.lv) buildCupola(g, r);
     if (big && r.x0 == big.x0 && r.y0 == big.y0 && r.lv == big.lv) for (const d of dormerSpots(r, G)) { // gable dormers on the street-facing slope
@@ -5109,7 +5128,7 @@ function buildRoofs(g) {
 }
 // mode: 'ext' whole house, 'in' whole house for walking inside, 'doll' one level with the lid off
 function buildScene(mode, lv) {
-  const g = Geo(), lights = []; lights.fine = [];
+  const g = Geo(), lights = []; lights.fine = []; lights.win = [];
   const li = LORD.indexOf(lv), show = l => mode != 'doll' || LORD.indexOf(l) <= li, lid = l => mode != 'doll' || LORD.indexOf(l) < li;
   for (const l of LORD) { if (!show(l)) continue; const ops = levelOpenings(l); for (const r of indoor(l)) buildRoom(g, r, ops, lid(l), lights); }
   const ground = mode != 'doll' || lv != 'B';
@@ -5127,10 +5146,57 @@ function buildScene(mode, lv) {
   return { V: new Float32Array(g.V), G: new Float32Array(g.G), lights, box: all, B: g.B, TR: g.TR };
 }
 
+
+// ---------- architectural trim: casings, sills and stools around openings ----------
+const TRAD_CLAD = [7, 14, 9];
+function trimOpening(g, e, o, inw, isExt, r, t) {
+  const st = o.o.style || '', kind = o.o.kind || '', win = !o.door, tm = mat('trim');
+  if (win && ['bay', 'glasswall'].includes(st)) return;
+  const curved = win && ['arched', 'round'].includes(st);
+  // inside: casing and, under windows, a stool and apron
+  if (!t.unfin && kind != 'garage') {
+    const ic = e.c + inw * .06, out = ic + inw * .016, cw = .07;
+    if (!curved) { g.along(e.h, o.a - cw, o.a, ic, out, win ? o.y0 - .01 : o.y0, o.y1 + cw, tm); g.along(e.h, o.b, o.b + cw, ic, out, win ? o.y0 - .01 : o.y0, o.y1 + cw, tm); g.along(e.h, o.a - cw, o.b + cw, ic, out + inw * .004, o.y1, o.y1 + cw, tm); }
+    if (win && o.y0 > .25) { g.along(e.h, o.a - cw - .03, o.b + cw + .03, ic - inw * .02, ic + inw * .05, o.y0 - .025, o.y0, tm); if (!curved) g.along(e.h, o.a - cw, o.b + cw, ic, out, o.y0 - .1, o.y0 - .025, tm); }
+    if (!isExt && o.door) { const ic2 = e.c - inw * .06, out2 = ic2 - inw * .016; g.along(e.h, o.a - cw, o.a, ic2, out2, o.y0, o.y1 + cw, tm); g.along(e.h, o.b, o.b + cw, ic2, out2, o.y0, o.y1 + cw, tm); g.along(e.h, o.a - cw, o.b + cw, ic2, out2 - inw * .004, o.y1, o.y1 + cw, tm); }
+  }
+  if (!isExt || r.lv == 'B') return;
+  // outside
+  const oc = e.c - inw * .16, clad = (MATS[P.ext.siding] || [])[1], trad = TRAD_CLAD.includes(clad), sh = win && P.ext.shutters && o.o.w <= 1.9 && o.o.h > .8 && !['round', 'clerestory'].includes(st);
+  const em = trad ? tm : mat(P.ext.frame || 'trim'), cw = trad ? .1 : .035, dep = trad ? .028 : .02;
+  if (!curved) {
+    if (!sh) { g.along(e.h, o.a - cw, o.a, oc, oc - inw * dep, win ? o.y0 : o.y0, o.y1 + cw, em); g.along(e.h, o.b, o.b + cw, oc, oc - inw * dep, win ? o.y0 : o.y0, o.y1 + cw, em); }
+    g.along(e.h, o.a - cw - (trad ? .02 : 0), o.b + cw + (trad ? .02 : 0), oc, oc - inw * (dep + (trad ? .012 : 0)), o.y1, o.y1 + cw + (trad ? .03 : 0), em);
+    if (trad) g.along(e.h, o.a - cw - .04, o.b + cw + .04, oc, oc - inw * .07, o.y1 + cw + .03, o.y1 + cw + .045, em);
+  }
+  if (win) { const sm = clad == 6 || clad == 17 ? mat('found') : trad ? tm : mat(P.ext.frame || 'trim'); g.along(e.h, o.a - cw - .03, o.b + cw + .03, oc + inw * .03, oc - inw * .06, o.y0 - .045, o.y0, sm); }
+}
+function buildGutters(g, r, G, rf, geoms) {
+  const { e, x, U0, U1, v0, v1, ye, abA, abB } = G, gm = mat(P.ext.gutter || (P.ext.frame == 'matte_black' ? 'matte_black' : 'trim'));
+  const pt = (u, v, y) => x ? [u, y, v] : [v, y, u], bx = (a, b2, m) => g.box(a[0], a[1], a[2], b2[0], b2[1], b2[2], m);
+  const inHouse = (px, pz) => P.rooms.some(q => !isOut(q) && px > q.x + .02 && px < q.x + q.w - .02 && pz > q.y + .02 && pz < q.y + q.d - .02);
+  const ru0 = x ? r.x0 : r.y0, ru1 = x ? r.x1 : r.y1;
+  for (const s of [-1, 1]) {
+    const ve = s < 0 ? v0 - e : v1 + e, vg = ve + s * .07;
+    bx(pt(U0, ve, ye - .19), pt(U1, ve + s * .13, ye - .06), gm);
+    const vd = (s < 0 ? v0 - .16 : v1 + .16) + s * .06;
+    for (const [uu, ab] of [[ru0 + .14, abA], [ru1 - .14, abB]]) {
+      if (ab) continue; const w = pt(uu, vd, 0); if (inHouse(w[0], w[2])) continue;
+      let bot = typeof gradeAt == 'function' ? gradeAt(w[0], w[2]) : 0;
+      for (const [r2, G2] of geoms) if (r2 !== r && G2.ye < ye - .3 && w[0] > r2.x0 - G2.e && w[0] < r2.x1 + G2.e && w[2] > r2.y0 - G2.e && w[2] < r2.y1 + G2.e) bot = Math.max(bot, G2.ye + .02);
+      bx(pt(uu - .04, vg, ye - .32), pt(uu + .04, vd, ye - .24), gm);
+      bx(pt(uu - .04, vd - .04, bot + .05), pt(uu + .04, vd + .04, ye - .24), gm);
+      bx(pt(uu - .045, vd - .045, bot), pt(uu + .045, vd + s * .25, bot + .07), gm);
+    }
+  }
+}
 const GLR = (() => {
-  let gl, cv, prog, sprog, skyp, vao, gvao, vbuf, gbuf, nV = 0, nG = 0, fbo, stex, scene = null, shDirty = true, raf = 0;
+  // Pipeline (when the phone can render to half-float): shadow map -> normal/depth prepass -> ambient occlusion -> HDR scene with MSAA -> bloom -> tone map and grade.
+  // Without half-float targets it falls back to one MSAA pass that tone-maps in the shader.
+  let gl, cv, prog, sprog, skyp, nprog, aop, abp, dnp, upp, cmp, vao, gvao, vbuf, gbuf, nV = 0, nG = 0, fbo, stex, scene = null, shDirty = true, raf = 0;
+  let HDR = false, MS = 4, T = null, shKey = '';
   const SH = 2048, cam = { mode: 'orbit', tgt: [0, 1, 0], yaw: .7, pitch: .55, dist: 30, pos: [0, 1.6, 0] };
-  const env = { hour: 14, month: 6, lightsOn: true };
+  const env = { hour: 14, month: 6, lightsOn: true, quality: 'high' };
   const VS = `#version 300 es
 layout(location=0) in vec3 aP; layout(location=1) in vec3 aN; layout(location=2) in vec3 aC1; layout(location=3) in vec3 aC2; layout(location=4) in vec4 aM;
 uniform mat4 uVP; out vec3 vP; out vec3 vN; out vec3 vC1; out vec3 vC2; out vec4 vM;
@@ -5138,73 +5204,159 @@ void main(){ vP=aP; vN=aN; vC1=aC1; vC2=aC2; vM=aM; gl_Position=uVP*vec4(aP,1.);
   const FS = `#version 300 es
 precision highp float; precision highp sampler2DShadow;
 in vec3 vP; in vec3 vN; in vec3 vC1; in vec3 vC2; in vec4 vM;
-uniform vec3 uEye,uSunDir,uSunCol,uSky,uGnd; uniform float uAmb,uAlpha,uExp;
-uniform mat4 uLVP; uniform sampler2DShadow uSh;
-uniform int uNL; uniform vec3 uLP[16]; uniform vec3 uLC[16]; uniform vec3 uLA[16]; uniform vec3 uLB[16];
+uniform vec3 uEye,uSunDir,uSunCol,uSky,uGnd,uHor,uSkyIrr; uniform float uAmb,uAlpha,uExp,uFog,uSoft,uInAmb;
+uniform mat4 uLVP; uniform sampler2DShadow uSh; uniform sampler2D uAO; uniform int uHasAO,uHDR; uniform vec2 uFull;
+uniform int uNL; uniform vec3 uLP[16]; uniform vec3 uLC[16]; uniform vec3 uLA[16]; uniform vec3 uLB[16]; uniform float uLD[16];
+uniform float uInt; uniform int uNW; uniform vec3 uWP[12]; uniform vec3 uWN[12]; uniform vec3 uWA[12]; uniform vec3 uWB[12]; uniform float uWS[12]; uniform float uWin;
 out vec4 o;
+const float PI=3.14159265;
 float h21(vec2 p){p=fract(p*vec2(123.34,456.21));p+=dot(p,p+45.32);return fract(p.x*p.y);}
 float vn(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);return mix(mix(h21(i),h21(i+vec2(1,0)),f.x),mix(h21(i+vec2(0,1)),h21(i+vec2(1,1)),f.x),f.y);}
 float fbm(vec2 p){float a=.5,s=0.;for(int i=0;i<4;i++){s+=a*vn(p);p*=2.03;a*=.5;}return s;}
+float lum(vec3 x){return dot(x,vec3(.2126,.7152,.0722));}
 vec3 aces(vec3 x){return clamp((x*(2.51*x+.03))/(x*(2.43*x+.59)+.14),0.,1.);}
+vec3 skyAt(vec3 d){ float t=clamp(d.y,0.,1.); vec3 c=mix(uHor,uSky,pow(t,.45)); return d.y<0.?mix(uHor,uGnd*1.6,clamp(-d.y*3.,0.,1.)):c; }
+float ggx(float NdH,float a){ float a2=a*a, d=NdH*NdH*(a2-1.)+1.; return a2/(PI*d*d); }
+float vis(float NdL,float NdV,float a){ float k=a*.5; return .25/max((NdL*(1.-k)+k)*(NdV*(1.-k)+k),1e-4); }
+const vec2 PD[12]=vec2[](vec2(-.326,-.406),vec2(-.840,-.074),vec2(-.696,.457),vec2(-.203,.621),vec2(.962,-.195),vec2(.473,-.480),vec2(.519,.767),vec2(.185,-.893),vec2(.507,.064),vec2(.896,.412),vec2(-.322,-.933),vec2(-.792,-.598));
 void main(){
   vec3 N=normalize(vN); vec3 V=normalize(uEye-vP);
   vec2 uv=abs(N.y)>.6?vP.xz:(abs(N.x)>abs(N.z)?vP.zy:vP.xy);
   float ty=vM.x, sc=abs(vM.z), ro=vM.y; if(vM.z<0.) uv=uv.yx;
   vec3 c=vC1; float fw=max(length(dFdx(uv)),length(dFdy(uv))), fade=clamp(1.3-fw*60.,0.,1.), fine=clamp(1.2-fw*230.,0.,1.);
+  float bk=0.;
   if(ty<.5){ c*=.97+.06*fbm(uv*3.); }
   else if(ty<1.5){ float id=floor(uv.x/sc), len=sc*9., off=h21(vec2(id,7.))*len, jd=floor((uv.y+off)/len); float tone=h21(vec2(id,jd));
     float gr=fbm(vec2(uv.x*38.,uv.y*2.5)+tone*20.); c=mix(vC1,vC2,clamp(tone*.75+gr*.5-.15,0.,1.));
-    float fx=fract(uv.x/sc), fy=fract((uv.y+off)/len); float gap=smoothstep(0.,.025,fx)*smoothstep(1.,.975,fx)*smoothstep(0.,.003,fy); c*=mix(1.,mix(.55,1.,gap),fade); }
-  else if(ty<2.5){ vec2 gq=uv/sc, f=fract(gq); float ln=min(min(f.x,1.-f.x),min(f.y,1.-f.y))*sc; float tone=h21(floor(gq)); c=mix(vC2,vC1*(.93+.1*tone)*(.97+.06*fbm(uv*6.)),mix(1.,smoothstep(.002,.005,ln),fade)); }
-  else if(ty<3.5){ float n=h21(floor(uv*380.)); c=mix(vC1,vC2,n*fine+.5*(1.-fine))*(.88+.24*fbm(uv*7.)); }
+    float fx=fract(uv.x/sc), fy=fract((uv.y+off)/len); float gap=smoothstep(0.,.025,fx)*smoothstep(1.,.975,fx)*smoothstep(0.,.003,fy); c*=mix(1.,mix(.55,1.,gap),fade); ro*=.85+.3*gr; bk=.0016; }
+  else if(ty<2.5){ vec2 gq=uv/sc, f=fract(gq); float ln=min(min(f.x,1.-f.x),min(f.y,1.-f.y))*sc; float tone=h21(floor(gq)); c=mix(vC2,vC1*(.93+.1*tone)*(.97+.06*fbm(uv*6.)),mix(1.,smoothstep(.002,.005,ln),fade)); bk=.0025; }
+  else if(ty<3.5){ float n=h21(floor(uv*380.)); c=mix(vC1,vC2,n*fine+.5*(1.-fine))*(.88+.24*fbm(uv*7.)); bk=.0012; }
   else if(ty<4.5){ float r1=h21(floor(uv*210.)), r2=h21(floor(uv*95.)+3.); c=vC1*(.95+.1*fbm(uv*2.)); if(r1>.86) c=mix(c,mix(vC2,vec3(.85),step(.94,r1)),fine); if(r2>.93) c=mix(c,vC2,clamp(1.2-fw*110.,0.,1.)); c=mix(c,mix(vC1,vC2,.12),(1.-fine)*.6); }
-  else if(ty<5.5){ c=mix(vC1,vC2,fbm(uv*1.4))*(.94+.12*vn(uv*55.)); }
-  else if(ty<6.5){ float bw=.2*sc,bh=.067*sc,row=floor(uv.y/bh); float u=uv.x/bw+.5*mod(row,2.); vec2 f=fract(vec2(u,uv.y/bh)); float mx=min(f.x,1.-f.x)*bw,my=min(f.y,1.-f.y)*bh; float m=smoothstep(.003,.007,min(mx,my)); float tone=h21(vec2(floor(u),row)); c=mix(vC2,vC1*(.78+.4*tone)*(.92+.16*fbm(uv*9.)),mix(1.,m,fade)); }
-  else if(ty<7.5){ float f=fract(uv.y/sc); c=vC1*(.84+.16*smoothstep(0.,.3,f))*(1.-.4*step(.93,f)*fade)*(.97+.06*fbm(uv*vec2(2.,30.))); }
-  else if(ty<8.5){ c=mix(vC1,vC2,fbm(uv*.6/sc))*(.78+.44*vn(uv*70.)*fine+.22*(1.-fine)); }
-  else if(ty<9.5){ float rh=.14,row=floor(uv.y/rh); float u=uv.x/.33+h21(vec2(row,3.)); vec2 f=fract(vec2(u,uv.y/rh)); float tone=h21(vec2(floor(u),row)); c=mix(vC1,vC2,tone)*(.72+.28*smoothstep(0.,.4,f.y))*(1.-.3*step(f.x,.05)*fade); }
-  else if(ty<10.5){ float v=fbm(uv*1.6+fbm(uv*2.3)*2.2); float vein=smoothstep(.47,.5,v)*smoothstep(.53,.5,v); c=mix(vC1,vC2,vein*.8+.18*fbm(uv*4.)); if(sc<5.){ vec2 f=fract(uv/sc); float ln=min(min(f.x,1.-f.x),min(f.y,1.-f.y))*sc; c*=mix(1.,mix(.7,1.,smoothstep(.001,.003,ln)),fade);} }
-  else if(ty<11.5){ o=vec4(pow(aces(vC1*vM.w*uExp),vec3(1./2.2)),1.); return; }
-  else if(ty<12.5){ c=mix(vC1,vC2,step(.8,h21(floor(uv*240./sc)))*fine+.2*(1.-fine))*(.88+.24*fbm(uv*3.)); }
+  else if(ty<5.5){ c=mix(vC1,vC2,fbm(uv*1.4))*(.94+.12*vn(uv*55.)); bk=.0007; }
+  else if(ty<6.5){ float bw=.2*sc,bh=.067*sc,row=floor(uv.y/bh); float u=uv.x/bw+.5*mod(row,2.); vec2 f=fract(vec2(u,uv.y/bh)); float mx=min(f.x,1.-f.x)*bw,my=min(f.y,1.-f.y)*bh; float m=smoothstep(.003,.007,min(mx,my)); float tone=h21(vec2(floor(u),row)); c=mix(vC2,vC1*(.78+.4*tone)*(.92+.16*fbm(uv*9.)),mix(1.,m,fade)); bk=.007; }
+  else if(ty<7.5){ float f=fract(uv.y/sc); c=vC1*(.84+.16*smoothstep(0.,.3,f))*(1.-.4*step(.93,f)*fade)*(.97+.06*fbm(uv*vec2(2.,30.))); bk=.007; }
+  else if(ty<8.5){ vec2 q=uv/sc; float macro=fbm(q*.05)*.7+fbm(q*.21+3.)*.5, dry=smoothstep(.55,.85,fbm(q*.11+9.)); float blades=vn(uv*70.)*fine+.5*(1.-fine), clump=vn(uv*9.);
+    c=mix(vC2,vC1,clamp(macro*1.1-.15,0.,1.))*(.72+.38*blades)*(.9+.2*clump); c=mix(c,c*vec3(1.35,1.18,.62),dry*.45); bk=.012; ro=1.; }
+  else if(ty<9.5){ float rh=.14,row=floor(uv.y/rh); float u=uv.x/.33+h21(vec2(row,3.)); vec2 f=fract(vec2(u,uv.y/rh)); float tone=h21(vec2(floor(u),row)); c=mix(vC1,vC2,tone)*(.72+.28*smoothstep(0.,.4,f.y))*(1.-.3*step(f.x,.05)*fade)*(.9+.2*vn(uv*140.)*fine); bk=.006; }
+  else if(ty<10.5){ float v=fbm(uv*1.6+fbm(uv*2.3)*2.2); float vein=smoothstep(.47,.5,v)*smoothstep(.53,.5,v); c=mix(vC1,vC2,vein*.8+.18*fbm(uv*4.)); if(sc<5.){ vec2 f=fract(uv/sc); float ln=min(min(f.x,1.-f.x),min(f.y,1.-f.y))*sc; c*=mix(1.,mix(.7,1.,smoothstep(.001,.003,ln)),fade); bk=.0015;} }
+  else if(ty<11.5){ vec3 e=vC1*vM.w; o=vec4(uHDR==1?e:pow(aces(e*uExp),vec3(1./2.2)),1.); return; }
+  else if(ty<12.5){ c=mix(vC1,vC2,step(.8,h21(floor(uv*240./sc)))*fine+.2*(1.-fine))*(.88+.24*fbm(uv*3.)); bk=.0008; }
 ${PAT_GLSL}
   else if(ty<13.5){ c=vC1; }
-  else { float f=fract(uv.x/sc); c=vC1*(f>.86?1.05:(f<.04?.72:.95)); }
-  vec3 hemi=mix(uGnd,uSky,N.y*.5+.5);
+  else { float f=fract(uv.x/sc); c=vC1*(f>.86?1.05:(f<.04?.72:.95)); bk=.004; }
+  if(ty>14.5&&ty<20.5) bk=.003;
+  // relief from the pattern itself: dark grout, gaps and mortar sit lower
+  float bh=lum(c)/max(lum(vC1)*.5+lum(vC2)*.5,.02)*bk*fade;
+  vec3 dpx=dFdx(vP), dpy=dFdy(vP); float hx=dFdx(bh), hy=dFdy(bh);
+  vec3 r1=cross(dpy,N), r2=cross(N,dpx); float det=dot(dpx,r1);
+  if(abs(det)>1e-9){ vec3 gs=sign(det)*(hx*r1+hy*r2); N=normalize(abs(det)*N-gs); }
+  if(dot(N,V)<0.&&uAlpha>=1.) N=normalize(N+V*(-dot(N,V)+.02));
+  float metal=ty>12.5&&ty<13.5?1.:0., rough=clamp(ro,.06,1.), a=rough*rough;
+  vec3 F0=mix(vec3(.04),c,metal), dif=c*(1.-metal);
+  float NdV=max(dot(N,V),1e-3);
   vec3 col=vec3(0.);
   float ndl=max(dot(N,uSunDir),0.), sh=1.;
-  if(ndl>0.&&uSunCol.g>0.){ vec4 lp=uLVP*vec4(vP+N*.04,1.); vec3 s=lp.xyz/lp.w*.5+.5;
-    if(s.x>0.&&s.x<1.&&s.y>0.&&s.y<1.&&s.z<1.){ float t=1./${SH}.; sh=0.; float b=.0012+.003*(1.-ndl);
-      sh+=texture(uSh,vec3(s.xy+vec2(-.6,-.6)*t,s.z-b)); sh+=texture(uSh,vec3(s.xy+vec2(.6,-.6)*t,s.z-b)); sh+=texture(uSh,vec3(s.xy+vec2(-.6,.6)*t,s.z-b)); sh+=texture(uSh,vec3(s.xy+vec2(.6,.6)*t,s.z-b)); sh*=.25; }
-    float sp=pow(max(dot(N,normalize(uSunDir+V)),0.),mix(6.,220.,1.-ro))*(1.-ro)*(1.-ro)*2.;
-    col+=(c*ndl+sp)*uSunCol*sh; }
-  float ao=1.;
+  if(ndl>0.&&uSunCol.g>0.){ vec4 lp=uLVP*vec4(vP+N*.03,1.); vec3 s=lp.xyz/lp.w*.5+.5;
+    if(s.x>0.&&s.x<1.&&s.y>0.&&s.y<1.&&s.z<1.){ float t=uSoft/${SH}.; sh=0.; float b=.0008+.0025*(1.-ndl);
+      for(int i=0;i<12;i++) sh+=texture(uSh,vec3(s.xy+PD[i]*t,s.z-b)); sh/=12.; }
+    vec3 H=normalize(uSunDir+V); float NdH=max(dot(N,H),0.), VdH=max(dot(V,H),0.);
+    vec3 F=F0+(1.-F0)*pow(1.-VdH,5.);
+    col+=(dif*(1.-F)+PI*ggx(NdH,a)*vis(ndl,NdV,a)*F)*ndl*uSunCol*sh; }
+  float ao=1.; if(uHasAO==1) ao=texture(uAO,gl_FragCoord.xy/uFull).r;
+  float bao=1., inR=0., ld=0.; vec3 fill=vec3(0.);
   for(int i=0;i<16;i++){ if(i>=uNL) break;
-    if(all(greaterThan(vP,uLA[i]))&&all(lessThan(vP,uLB[i]))){ vec3 d=uLP[i]-vP; float q=dot(d,d); vec3 L=d*inversesqrt(q);
-      vec3 e=min(vP-uLA[i],uLB[i]-vP)+step(.5,abs(N))*9.; ao=min(ao,mix(.5,1.,smoothstep(0.,.75,min(e.x,min(e.y+.12,e.z)))));
-      float nl=max(dot(N,L)*.6+.4,0.), att=1./(1.+.16*q);
-      float sp=pow(max(dot(N,normalize(L+V)),0.),mix(6.,160.,1.-ro))*(1.-ro)*(1.-ro);
-      col+=(c*nl+sp)*uLC[i]*att; } }
-  col=(col+c*hemi*uAmb)*ao;
-  float fr=pow(1.-max(dot(N,V),0.),4.)*(1.-ro);
-  vec3 R=reflect(-V,N); vec3 envc=mix(uGnd,uSky,clamp(R.y*.5+.5,0.,1.))*(uAmb*2.+.15);
-  col=mix(col,envc,fr*.55);
-  float a=uAlpha<1.?clamp(uAlpha+fr*.6,0.,1.):1.;
-  if(uAlpha<1.) col=mix(uSky*.8,vC1*hemi,.35)+fr*uSky;
-  o=vec4(pow(aces(col*uExp),vec3(1./2.2)),a);
+    if(all(greaterThan(vP,uLA[i]))&&all(lessThan(vP,uLB[i]))){ bool ol=uLD[i]<0.; if(!ol){ inR=1.; ld=max(ld,uLD[i]); }
+      vec3 d=uLP[i]-vP; float q=dot(d,d); vec3 L=d*inversesqrt(q);
+      vec3 e=min(vP-uLA[i],uLB[i]-vP)+step(.5,abs(N))*9.; if(!ol) bao=min(bao,mix(.55,1.,smoothstep(0.,.6,min(e.x,min(e.y+.12,e.z)))));
+      float nl=max(dot(N,L),0.)*mix(.22,1.,smoothstep(-.35,.25,L.y)), att=1./(1.+.16*q);
+      vec3 H=normalize(L+V); vec3 F=F0+(1.-F0)*pow(1.-max(dot(V,H),0.),5.);
+      col+=(dif*(1.-F)*(nl*.85+.08)+PI*ggx(max(dot(N,H),0.),max(a,.03))*vis(max(nl,1e-3),NdV,max(a,.03))*F*nl)*uLC[i]*att*(ol?1.:uInt);
+      if(!ol) fill+=uLC[i]*.07*uInt; } }
+  // daylight through each window: a soft area light that fades with distance into the room
+  for(int i=0;i<12;i++){ if(i>=uNW) break;
+    if(all(greaterThan(vP,uWA[i]))&&all(lessThan(vP,uWB[i]))){ vec3 d=uWP[i]-vP; float q=dot(d,d); vec3 L=d*inversesqrt(q); float em=max(dot(-L,uWN[i]),0.);
+      if(em>0.){ float nl=max(dot(N,L),0.); vec3 Lc=mix(vec3(lum(uSkyIrr))*vec3(1.04,1.,.93),uSkyIrr,.4)*(uWS[i]*em/(q+uWS[i]*.35)*uWin); vec3 H=normalize(L+V); vec3 F=F0+(1.-F0)*pow(1.-max(dot(V,H),0.),5.);
+        col+=(dif*(1.-F)*(nl*.9+.1)+PI*ggx(max(dot(N,H),0.),max(a,.08))*vis(max(nl,1e-3),NdV,max(a,.08))*F*nl*.6)*Lc*mix(1.,ao,.6)*uInt; } } }
+  if(uHasAO==1) bao=mix(1.,bao,.35);
+  vec3 hemi=mix(uGnd,uSky,N.y*.5+.5); if(inR>0.) hemi=mix(vec3(lum(hemi))*vec3(1.06,1.,.9),hemi,.35);
+  vec3 amb=inR>0.?(hemi*uAmb*(uInAmb+ld*.45)+vec3(lum(uSkyIrr))*ld*.18)*uInt+fill:hemi*uAmb;
+  col+=dif*amb*ao*bao;
+  // reflections: the sky outside, the room's own light inside
+  vec3 R=reflect(-V,N); vec3 Fr=F0+(max(vec3(1.-rough),F0)-F0)*pow(1.-NdV,5.);
+  vec3 envc=inR>0.?(fill*1.4+uSkyIrr*ld*.8+hemi*uAmb*uInAmb)*(1.-rough*.6):skyAt(R)*(uAmb*1.6+.12)*(1.-rough*.75);
+  col+=envc*Fr*ao*(1.-rough*.5);
+  float fo=uFog>0.?1.-exp(-length(uEye-vP)*uFog):0.;
+  if(uAlpha<1.){ float Fg=.05+.95*pow(1.-NdV,5.); vec3 refl=skyAt(R)*(uAmb*1.7+.1); float al=clamp(uAlpha+Fg*.55,0.,.85); col=(refl*Fg+vC1*hemi*uAmb*.12)/al; col=mix(col,uHor,fo); o=vec4(uHDR==1?col:pow(aces(col*uExp),vec3(1./2.2)),al); return; }
+  col=mix(col,uHor*.95,fo);
+  o=vec4(uHDR==1?col:pow(aces(col*uExp),vec3(1./2.2)),1.);
 }`;
   const SVS = `#version 300 es
 layout(location=0) in vec3 aP; uniform mat4 uVP; void main(){ gl_Position=uVP*vec4(aP,1.); }`;
   const SFS = `#version 300 es
 precision mediump float; void main(){}`;
+  // normal + linear depth in view space, for ambient occlusion
+  const NVS = `#version 300 es
+layout(location=0) in vec3 aP; layout(location=1) in vec3 aN; uniform mat4 uVP,uV; out vec3 vN; out vec3 vQ;
+void main(){ vN=mat3(uV)*aN; vQ=(uV*vec4(aP,1.)).xyz; gl_Position=uVP*vec4(aP,1.); }`;
+  const NFS = `#version 300 es
+precision highp float; in vec3 vN; in vec3 vQ; out vec4 o; void main(){ vec3 n=normalize(vN); if(dot(n,vQ)>0.) n=-n; o=vec4(n,-vQ.z); }`;
+  const QVS = `#version 300 es
+out vec2 q; void main(){ vec2 p=vec2(float((gl_VertexID<<1)&2),float(gl_VertexID&2))*2.-1.; q=p*.5+.5; gl_Position=vec4(p,0.,1.); }`;
+  const AOFS = `#version 300 es
+precision highp float; in vec2 q; uniform sampler2D uND; uniform vec2 uTA; uniform float uR; uniform vec3 uK[12]; out vec4 o;
+float h21(vec2 p){p=fract(p*vec2(123.34,456.21));p+=dot(p,p+45.32);return fract(p.x*p.y);}
+vec3 vpos(vec2 uv,float d){ vec2 n=uv*2.-1.; return vec3(n*uTA*d,-d); }
+void main(){ vec4 nd=texture(uND,q); if(nd.w<=0.){ o=vec4(1.); return; }
+  vec3 P=vpos(q,nd.w), N=normalize(nd.xyz); float a=h21(gl_FragCoord.xy)*6.2831853; vec3 rv=vec3(cos(a),sin(a),0.);
+  vec3 T=normalize(rv-N*dot(rv,N)), B=cross(N,T); mat3 M=mat3(T,B,N); float R=uR*clamp(nd.w*.08,.6,2.5), occ=0.;
+  for(int i=0;i<12;i++){ vec3 S=P+M*uK[i]*R; float sd=-S.z; if(sd<=.01) continue; vec2 su=S.xy/(sd*uTA)*.5+.5; float d=texture(uND,su).w; if(d<=0.) continue;
+    float rc=smoothstep(0.,1.,R/abs(nd.w-d)); occ+=step(d,sd-.02*sd*.05-.015)*rc; }
+  float ao=1.-occ/12.; o=vec4(pow(clamp(ao,0.,1.),2.2)); }`;
+  const ABFS = `#version 300 es
+precision highp float; in vec2 q; uniform sampler2D uA,uND; uniform vec2 uPx; out vec4 o;
+void main(){ float d0=texture(uND,q).w, s=0., w=0.; for(int y=-2;y<=2;y++) for(int x=-2;x<=2;x++){ vec2 u=q+vec2(float(x),float(y))*uPx; float d=texture(uND,u).w; float k=exp(-abs(d-d0)*8./max(d0,.1)*6.); s+=texture(uA,u).r*k; w+=k; } o=vec4(s/max(w,1e-4)); }`;
+  const DNFS = `#version 300 es
+precision highp float; in vec2 q; uniform sampler2D uT; uniform vec2 uPx; uniform float uThr; uniform int uFirst; out vec4 o;
+void main(){ vec3 c=(texture(uT,q+uPx*vec2(-1,-1)).rgb+texture(uT,q+uPx*vec2(1,-1)).rgb+texture(uT,q+uPx*vec2(-1,1)).rgb+texture(uT,q+uPx*vec2(1,1)).rgb)*.25;
+  if(uFirst==1){ float l=max(c.r,max(c.g,c.b)); float k=clamp(l-uThr,0.,uThr*2.); k=k*k/(4.*uThr+1e-4); c*=max(k,l-uThr*2.)/max(l,1e-4); c=min(c,vec3(60.)); }
+  o=vec4(c,1.); }`;
+  const UPFS = `#version 300 es
+precision highp float; in vec2 q; uniform sampler2D uT; uniform vec2 uPx; out vec4 o;
+void main(){ vec3 c=texture(uT,q).rgb*4.; c+=(texture(uT,q+uPx*vec2(-1,0)).rgb+texture(uT,q+uPx*vec2(1,0)).rgb+texture(uT,q+uPx*vec2(0,-1)).rgb+texture(uT,q+uPx*vec2(0,1)).rgb)*2.;
+  c+=texture(uT,q+uPx*vec2(-1,-1)).rgb+texture(uT,q+uPx*vec2(1,-1)).rgb+texture(uT,q+uPx*vec2(-1,1)).rgb+texture(uT,q+uPx*vec2(1,1)).rgb; o=vec4(c/16.,1.); }`;
+  const CMFS = `#version 300 es
+precision highp float; in vec2 q; uniform sampler2D uHdr,uBl; uniform float uExp,uBloom,uVig,uWarm; out vec4 o;
+float h21(vec2 p){p=fract(p*vec2(123.34,456.21));p+=dot(p,p+45.32);return fract(p.x*p.y);}
+vec3 neutral(vec3 c){ float x=min(c.r,min(c.g,c.b)); float off=x<.08?x-6.25*x*x:.04; c-=off; float pk=max(c.r,max(c.g,c.b)); if(pk<.76) return c; float d=.24, np=1.-d*d/(pk+d-.76); c*=np/pk; float g=1.-1./(.15*(pk-np)+1.); return mix(c,vec3(np),g); }
+void main(){ vec3 c=texture(uHdr,q).rgb, b=texture(uBl,q).rgb; c=(c+b*uBloom)*uExp;
+  c*=vec3(1.+uWarm*.04,1.,1.-uWarm*.05);
+  c=neutral(c);
+  c=clamp(c,0.,1.); c=mix(c,c*c*(3.-2.*c),.18);
+  float l=dot(c,vec3(.2126,.7152,.0722)); c=mix(vec3(l),c,1.04);
+  vec2 v=q-.5; c*=mix(1.,1.-dot(v,v)*1.1,uVig);
+  c=pow(clamp(c,0.,1.),vec3(1./2.2)); c+=(h21(gl_FragCoord.xy)-.5)/255.;
+  o=vec4(c,1.); }`;
+  const CPFS = `#version 300 es
+precision mediump float; in vec2 q; uniform sampler2D uT; out vec4 o; void main(){ o=vec4(texture(uT,q).rgb,1.); }`;
+  let cpp, white;
   const KVS = `#version 300 es
 out vec2 q; void main(){ vec2 p=vec2(float((gl_VertexID<<1)&2),float(gl_VertexID&2))*2.-1.; q=p; gl_Position=vec4(p,.9999,1.); }`;
   const KFS = `#version 300 es
-precision highp float; in vec2 q; uniform vec3 uF,uR,uU,uSky,uHor,uSunDir,uSunCol; uniform float uTan,uAsp,uExp; out vec4 o;
+precision highp float; in vec2 q; uniform vec3 uF,uR,uU,uSky,uHor,uSunDir,uSunCol,uGnd; uniform float uTan,uAsp,uExp,uDay,uDark; uniform int uHDR; out vec4 o;
+float h21(vec2 p){p=fract(p*vec2(123.34,456.21));p+=dot(p,p+45.32);return fract(p.x*p.y);}
+float vn(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);return mix(mix(h21(i),h21(i+vec2(1,0)),f.x),mix(h21(i+vec2(0,1)),h21(i+vec2(1,1)),f.x),f.y);}
+float fbm(vec2 p){float a=.5,s=0.;for(int i=0;i<5;i++){s+=a*vn(p);p*=2.03;a*=.5;}return s;}
 vec3 aces(vec3 x){return clamp((x*(2.51*x+.03))/(x*(2.43*x+.59)+.14),0.,1.);}
-void main(){ vec3 d=normalize(uF+uR*q.x*uTan*uAsp+uU*q.y*uTan); float t=clamp(d.y,0.,1.); vec3 c=mix(uHor,uSky,pow(t,.5));
-  if(d.y<0.) c=mix(uHor,uHor*.6,clamp(-d.y*4.,0.,1.));
-  float s=max(dot(d,uSunDir),0.); c+=uSunCol*(pow(s,600.)*4.+pow(s,24.)*.12);
-  o=vec4(pow(aces(c*uExp),vec3(1./2.2)),1.); }`;
+void main(){ vec3 d=normalize(uF+uR*q.x*uTan*uAsp+uU*q.y*uTan); float t=clamp(d.y,0.,1.); vec3 c=mix(uHor,uSky,pow(t,.45));
+  float s=max(dot(d,uSunDir),0.);
+  c+=uSunCol*(pow(s,8.)*.05+pow(s,64.)*.12)*(1.-t*.5);
+  if(d.y>0.){ vec2 p=d.xz/(d.y+.12)*1.6; float n=fbm(p*.55+vec2(3.,7.))*.75+fbm(p*1.9)*.35; float cov=smoothstep(.62,.95,n)*smoothstep(0.,.18,d.y);
+    float lit=.55+.45*clamp(fbm(p*.55+uSunDir.xz*.6+vec2(3.,7.))-n+.6,0.,1.);
+    vec3 cc=(uSunCol*.28*lit+uSky*.9+uHor*.35)*mix(.35,1.,uDay); c=mix(c,cc,cov*.85); }
+  else c=mix(uHor,uGnd*1.4,clamp(-d.y*3.,0.,1.));
+  c+=uSunCol*smoothstep(.99985,.99995,s)*12.;
+  if(uDark>0.&&d.y>0.){ vec2 p=floor(vec2(atan(d.z,d.x),d.y)*vec2(420.,420.)); float st=step(.997,h21(p))*(.4+.6*h21(p+3.)); c+=vec3(st)*.5*uDark; }
+  o=vec4(uHDR==1?c:pow(aces(c*uExp),vec3(1./2.2)),1.); }`;
   const M = {
     mul(a, b) { const o = new Float32Array(16); for (let c = 0; c < 4; c++) for (let r = 0; r < 4; r++) o[c * 4 + r] = a[r] * b[c * 4] + a[4 + r] * b[c * 4 + 1] + a[8 + r] * b[c * 4 + 2] + a[12 + r] * b[c * 4 + 3]; return o; },
     persp(fy, asp, n, f) { const t = 1 / Math.tan(fy / 2), o = new Float32Array(16); o[0] = t / asp; o[5] = t; o[10] = (f + n) / (n - f); o[11] = -1; o[14] = 2 * f * n / (n - f); return o; },
@@ -5215,10 +5367,43 @@ void main(){ vec3 d=normalize(uF+uR*q.x*uTan*uAsp+uU*q.y*uTan); float t=clamp(d.
   function sh(type, src) { const s = gl.createShader(type); gl.shaderSource(s, src); gl.compileShader(s); if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(s)); return s; }
   function pg(v, f) { const p = gl.createProgram(); gl.attachShader(p, sh(gl.VERTEX_SHADER, v)); gl.attachShader(p, sh(gl.FRAGMENT_SHADER, f)); gl.linkProgram(p); if (!gl.getProgramParameter(p, gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(p)); const u = {}, n = gl.getProgramParameter(p, gl.ACTIVE_UNIFORMS); for (let i = 0; i < n; i++) { const nm = gl.getActiveUniform(p, i).name.replace('[0]', ''); u[nm] = gl.getUniformLocation(p, nm); } p.u = u; return p; }
   function mkVao(buf) { const v = gl.createVertexArray(); gl.bindVertexArray(v); gl.bindBuffer(gl.ARRAY_BUFFER, buf); const S = 64; [[0, 3, 0], [1, 3, 12], [2, 3, 24], [3, 3, 36], [4, 4, 48]].forEach(([i, n, o]) => { gl.enableVertexAttribArray(i); gl.vertexAttribPointer(i, n, gl.FLOAT, false, S, o); }); gl.bindVertexArray(null); return v; }
+  function tex(w, h, fmt, lin) {
+    const t = gl.createTexture(); gl.bindTexture(gl.TEXTURE_2D, t);
+    const F = { rgba16f: [gl.RGBA16F, gl.RGBA, gl.HALF_FLOAT], rgba8: [gl.RGBA8, gl.RGBA, gl.UNSIGNED_BYTE] }[fmt];
+    gl.texImage2D(gl.TEXTURE_2D, 0, F[0], w, h, 0, F[1], F[2], null);
+    const f = lin ? gl.LINEAR : gl.NEAREST; gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, f); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, f);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE); return t;
+  }
+  function fboTex(t, depthRB) { const f = gl.createFramebuffer(); gl.bindFramebuffer(gl.FRAMEBUFFER, f); gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, t, 0); if (depthRB) gl.framebufferRenderbuffer(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.RENDERBUFFER, depthRB); const ok = gl.checkFramebufferStatus(gl.FRAMEBUFFER) == gl.FRAMEBUFFER_COMPLETE; gl.bindFramebuffer(gl.FRAMEBUFFER, null); if (!ok) throw new Error('fbo'); return f; }
+  function rb(fmt, w, h, s) { const r = gl.createRenderbuffer(); gl.bindRenderbuffer(gl.RENDERBUFFER, r); if (s > 1) gl.renderbufferStorageMultisample(gl.RENDERBUFFER, s, fmt, w, h); else gl.renderbufferStorage(gl.RENDERBUFFER, fmt, w, h); return r; }
+  function freeTargets() { if (!T) return; for (const k of T.tex) gl.deleteTexture(k); for (const k of T.rb) gl.deleteRenderbuffer(k); for (const k of T.fb) gl.deleteFramebuffer(k); T = null; }
+  function targets(w, h) {
+    const hi = HDR && env.quality != 'fast', key = w + 'x' + h + (hi ? 'h' : 'l');
+    if (T && T.key == key) return T;
+    freeTargets(); const X = { key, w, h, hi, tex: [], rb: [], fb: [] };
+    try {
+      const cfmt = hi ? gl.RGBA16F : gl.RGBA8;
+      X.msC = rb(cfmt, w, h, MS); X.msD = rb(gl.DEPTH_COMPONENT24, w, h, MS); X.rb.push(X.msC, X.msD);
+      X.ms = gl.createFramebuffer(); gl.bindFramebuffer(gl.FRAMEBUFFER, X.ms); gl.framebufferRenderbuffer(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.RENDERBUFFER, X.msC); gl.framebufferRenderbuffer(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.RENDERBUFFER, X.msD);
+      if (gl.checkFramebufferStatus(gl.FRAMEBUFFER) != gl.FRAMEBUFFER_COMPLETE) throw new Error('ms'); gl.bindFramebuffer(gl.FRAMEBUFFER, null); X.fb.push(X.ms);
+      if (!hi) { X.ldr = tex(w, h, 'rgba8', false); X.ldrF = fboTex(X.ldr); X.tex.push(X.ldr); X.fb.push(X.ldrF); }
+      if (hi) {
+        X.hdr = tex(w, h, 'rgba16f', true); X.hdrF = fboTex(X.hdr); X.tex.push(X.hdr); X.fb.push(X.hdrF);
+        const hw = Math.max(2, w >> 1), hh = Math.max(2, h >> 1); X.hw = hw; X.hh = hh;
+        X.nd = tex(hw, hh, 'rgba16f', false); X.ndD = rb(gl.DEPTH_COMPONENT24, hw, hh, 1); X.ndF = fboTex(X.nd, X.ndD); X.tex.push(X.nd); X.rb.push(X.ndD); X.fb.push(X.ndF);
+        X.ao = tex(hw, hh, 'rgba8', true); X.aoF = fboTex(X.ao); X.ao2 = tex(hw, hh, 'rgba8', true); X.ao2F = fboTex(X.ao2); X.tex.push(X.ao, X.ao2); X.fb.push(X.aoF, X.ao2F);
+        X.bl = []; let bw = w, bh = h; for (let i = 0; i < 6; i++) { bw = Math.max(2, bw >> 1); bh = Math.max(2, bh >> 1); const t = tex(bw, bh, 'rgba16f', true); X.bl.push({ t, f: fboTex(t), w: bw, h: bh }); X.tex.push(t); X.fb.push(X.bl[i].f); }
+      }
+    } catch (e) { T = X; freeTargets(); if (hi) { HDR = false; return targets(w, h); } T = null; return null; }
+    return T = X;
+  }
   function init(canvas) {
-    cv = canvas; gl = cv.getContext('webgl2', { antialias: true, alpha: false, powerPreference: 'high-performance' });
+    cv = canvas; gl = cv.getContext('webgl2', { antialias: false, alpha: false, powerPreference: 'high-performance', preserveDrawingBuffer: false });
     if (!gl) return false;
-    prog = pg(VS, FS); sprog = pg(SVS, SFS); skyp = pg(KVS, KFS);
+    HDR = !window.GL_NOHDR && !!gl.getExtension('EXT_color_buffer_float');
+    try { const s = gl.getInternalformatParameter(gl.RENDERBUFFER, HDR ? gl.RGBA16F : gl.RGBA8, gl.SAMPLES); MS = Math.max(1, Math.min(4, s && s.length ? s[0] : 1)); } catch (e) { MS = 1; }
+    prog = pg(VS, FS); sprog = pg(SVS, SFS); skyp = pg(KVS, KFS); cpp = pg(QVS, CPFS);
+    if (HDR) { try { nprog = pg(NVS, NFS); aop = pg(QVS, AOFS); abp = pg(QVS, ABFS); dnp = pg(QVS, DNFS); upp = pg(QVS, UPFS); cmp = pg(QVS, CMFS); } catch (e) { HDR = false; } }
     vbuf = gl.createBuffer(); gbuf = gl.createBuffer(); vao = mkVao(vbuf); gvao = mkVao(gbuf);
     stex = gl.createTexture(); gl.bindTexture(gl.TEXTURE_2D, stex);
     gl.texImage2D(gl.TEXTURE_2D, 0, gl.DEPTH_COMPONENT24, SH, SH, 0, gl.DEPTH_COMPONENT, gl.UNSIGNED_INT, null);
@@ -5226,8 +5411,9 @@ void main(){ vec3 d=normalize(uF+uR*q.x*uTan*uAsp+uU*q.y*uTan); float t=clamp(d.
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_COMPARE_MODE, gl.COMPARE_REF_TO_TEXTURE); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_COMPARE_FUNC, gl.LEQUAL);
     fbo = gl.createFramebuffer(); gl.bindFramebuffer(gl.FRAMEBUFFER, fbo); gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.TEXTURE_2D, stex, 0); gl.drawBuffers([gl.NONE]); gl.readBuffer(gl.NONE); gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+    T = null; white = gl.createTexture(); gl.bindTexture(gl.TEXTURE_2D, white); gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA8, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array([255, 255, 255, 255]));
     cv.addEventListener('webglcontextlost', e => e.preventDefault());
-    cv.addEventListener('webglcontextrestored', () => { const s = scene; init(cv); if (s) setScene(s); });
+    cv.addEventListener('webglcontextrestored', () => { const s = scene; T = null; init(cv); if (s) setScene(s); });
     return true;
   }
   function setScene(s) {
@@ -5240,9 +5426,9 @@ void main(){ vec3 d=normalize(uF+uR*q.x*uTan*uAsp+uU*q.y*uTan); float t=clamp(d.
     const S0 = siteCfg(), sv = sunVec(env.hour, env.month, S0.lat, S0.north), up = Math.sin(sv.alt) / .9, k = clamp(up * 5, 0, 1), w = clamp(up * 2.2, 0, 1);
     const dir = nrm(sv.alt > 0 ? sv.dir : [sv.dir[0], .02, sv.dir[2]]);
     const mix = (a, b, t) => a.map((v, i) => v + (b[i] - v) * t);
-    const col = mix([1.6, .7, .3], [3.1, 2.9, 2.6], w).map(v => v * k);
-    const sky = mix(mix([.012, .018, .045], [.35, .3, .42], clamp(up * 6 + 1, 0, 1)), [.2, .42, .95], w), hor = mix(mix([.02, .03, .06], [1.1, .55, .3], clamp(up * 6 + 1, 0, 1)), [.72, .82, .95], w);
-    return { dir, col, sky, hor, amb: .1 + .62 * w, night: up <= 0 };
+    const col = mix([1.6, .62, .22], [3.0, 2.82, 2.55], w).map(v => v * k);
+    const tw = clamp(up * 6 + 1, 0, 1), sky = mix(mix([.018, .026, .06], [.3, .26, .38], tw), [.16, .34, .82], w), hor = mix(mix([.028, .036, .065], [1.05, .52, .28], tw), [.66, .76, .9], w);
+    return { dir, col, sky, hor, amb: .1 + .58 * w + .32 * tw * (1 - w), night: up <= 0, day: w, dark: clamp(-up * 8, 0, 1) };
   }
   function view() {
     const asp = cv.width / cv.height; let eye, f;
@@ -5251,13 +5437,21 @@ void main(){ vec3 d=normalize(uF+uR*q.x*uTan*uAsp+uU*q.y*uTan); float t=clamp(d.
     const hf = (cam.mode == 'orbit' ? 48 : 88) * Math.PI / 360, fy = Math.min(2 * Math.atan(Math.tan(hf) / Math.min(asp, 1.5)), (cam.mode == 'orbit' ? 62 : 84) * Math.PI / 180);
     const r = nrm(cross(f, [0, 1, 0])), u = cross(r, f);
     const V = M.look(eye, [eye[0] + f[0], eye[1] + f[1], eye[2] + f[2]], [0, 1, 0]);
-    const far = cam.mode == 'orbit' ? cam.dist + 200 : 260, near = cam.mode == 'orbit' ? Math.max(.3, cam.dist * .05) : .06;
-    return { eye, f, r, u, fy, asp, VP: M.mul(M.persp(fy, asp, near, far), V) };
+    const far = cam.mode == 'orbit' ? cam.dist + 300 : 320, near = cam.mode == 'orbit' ? Math.max(.3, cam.dist * .05) : .06;
+    return { eye, f, r, u, fy, asp, V, VP: M.mul(M.persp(fy, asp, near, far), V) };
   }
-  function resize() { const d = Math.min(window.devicePixelRatio || 1, 2), w = Math.max(2, Math.round(cv.clientWidth * d)), h = Math.max(2, Math.round(cv.clientHeight * d)); if (cv.width != w || cv.height != h) { cv.width = w; cv.height = h; } }
+  function resize() { const d = Math.min(window.devicePixelRatio || 1, env.quality == 'fast' ? 1.5 : 2), w = Math.max(2, Math.round(cv.clientWidth * d)), h = Math.max(2, Math.round(cv.clientHeight * d)); if (cv.width != w || cv.height != h) { cv.width = w; cv.height = h; } }
+  const quad = () => { gl.bindVertexArray(null); gl.drawArrays(gl.TRIANGLES, 0, 3); };
+  const KERN = (() => { const k = []; for (let i = 0; i < 12; i++) { const a = i * 2.39996, z = .15 + .85 * ((i * .618) % 1), r = Math.sqrt(1 - z * z), s = .25 + .75 * ((i + 1) / 12) ** 2; k.push(Math.cos(a) * r * s, Math.sin(a) * r * s, z * s); } return new Float32Array(k); })();
+  let lastT = 0, slow = 0, nf = 0;
   function draw() {
     raf = 0; if (!gl || !scene) return; resize();
-    const S = sun(), v = view(), b = scene.box, cx = (b.x0 + b.x1) / 2, cz = (b.y0 + b.y1) / 2, R = Math.hypot(b.x1 - b.x0, b.y1 - b.y0) / 2 + 9;
+    const now = performance.now(), dt = now - lastT; lastT = now;
+    if (dt < 250) { slow = slow * .85 + dt * .15; nf++; if (nf > 24 && slow > 70 && env.quality == 'high') { env.quality = 'fast'; T && (T.key = ''); } } else nf = 0;
+    const S = sun(), v = view(), b = scene.box, walk = cam.mode == 'walk';
+    // the sun's shadow map covers the house when orbiting and the rooms around you when walking, so indoor shadows stay sharp
+    const cx = walk ? Math.round(cam.pos[0]) : (b.x0 + b.x1) / 2, cz = walk ? Math.round(cam.pos[2]) : (b.y0 + b.y1) / 2, R = walk ? 13 : Math.hypot(b.x1 - b.x0, b.y1 - b.y0) / 2 + 9;
+    const k2 = [cx, cz, R, env.hour, env.month].join(','); if (k2 != shKey) { shKey = k2; shDirty = true; }
     const LV = M.look([cx + S.dir[0] * R * 2, 3 + S.dir[1] * R * 2, cz + S.dir[2] * R * 2], [cx, 3, cz], [0, 1, 0]), LVP = M.mul(M.ortho(-R, R, -R, R, .5, R * 4), LV);
     gl.enable(gl.DEPTH_TEST); gl.depthFunc(gl.LEQUAL); gl.depthMask(true);
     if (shDirty && !S.night) {
@@ -5266,29 +5460,66 @@ void main(){ vec3 d=normalize(uF+uR*q.x*uTan*uAsp+uU*q.y*uTan); float t=clamp(d.
       gl.useProgram(sprog); gl.uniformMatrix4fv(sprog.u.uVP, false, LVP); gl.bindVertexArray(vao); gl.drawArrays(gl.TRIANGLES, 0, nV);
       gl.disable(gl.POLYGON_OFFSET_FILL); gl.bindFramebuffer(gl.FRAMEBUFFER, null); shDirty = false;
     }
-    const inside = cam.mode == 'walk', expo = S.night ? 1.25 : (inside ? 1.15 : .95);
-    gl.viewport(0, 0, cv.width, cv.height); gl.clearColor(0, 0, 0, 1); gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+    const X = targets(cv.width, cv.height), hi = !!(X && X.hi), inside = walk;
+    const expo = (S.night ? 1.35 : (inside ? 1.0 : .68)) * (env.ev || 1), tA = [Math.tan(v.fy / 2) * v.asp, Math.tan(v.fy / 2)];
+    // 1. ambient occlusion from a half-size normal and depth pass
+    if (hi) {
+      gl.bindFramebuffer(gl.FRAMEBUFFER, X.ndF); gl.viewport(0, 0, X.hw, X.hh); gl.clearColor(0, 0, 0, 0); gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+      gl.disable(gl.CULL_FACE); gl.useProgram(nprog); gl.uniformMatrix4fv(nprog.u.uVP, false, v.VP); gl.uniformMatrix4fv(nprog.u.uV, false, v.V); gl.bindVertexArray(vao); gl.drawArrays(gl.TRIANGLES, 0, nV);
+      gl.disable(gl.DEPTH_TEST);
+      gl.bindFramebuffer(gl.FRAMEBUFFER, X.aoF); gl.useProgram(aop); gl.activeTexture(gl.TEXTURE1); gl.bindTexture(gl.TEXTURE_2D, X.nd); gl.uniform1i(aop.u.uND, 1);
+      gl.uniform2f(aop.u.uTA, tA[0], tA[1]); gl.uniform1f(aop.u.uR, inside ? .85 : 1.); gl.uniform3fv(aop.u.uK, KERN); quad();
+      gl.bindFramebuffer(gl.FRAMEBUFFER, X.ao2F); gl.useProgram(abp); gl.activeTexture(gl.TEXTURE2); gl.bindTexture(gl.TEXTURE_2D, X.ao); gl.uniform1i(abp.u.uA, 2); gl.uniform1i(abp.u.uND, 1); gl.uniform2f(abp.u.uPx, 1 / X.hw, 1 / X.hh); quad();
+      gl.enable(gl.DEPTH_TEST);
+    }
+    // 2. the scene
+    gl.bindFramebuffer(gl.FRAMEBUFFER, X ? X.ms : null); gl.viewport(0, 0, cv.width, cv.height); gl.clearColor(0, 0, 0, 1); gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
     gl.disable(gl.CULL_FACE); gl.depthMask(false); gl.useProgram(skyp);
-    gl.uniform3fv(skyp.u.uF, v.f); gl.uniform3fv(skyp.u.uR, v.r); gl.uniform3fv(skyp.u.uU, v.u); gl.uniform3fv(skyp.u.uSky, S.sky); gl.uniform3fv(skyp.u.uHor, S.hor); gl.uniform3fv(skyp.u.uSunDir, S.dir); gl.uniform3fv(skyp.u.uSunCol, S.col);
-    gl.uniform1f(skyp.u.uTan, Math.tan(v.fy / 2)); gl.uniform1f(skyp.u.uAsp, v.asp); gl.uniform1f(skyp.u.uExp, expo);
+    const gnd = S.night ? [.016, .02, .03] : [.26, .25, .2].map(x => x * (.3 + S.amb));
+    gl.uniform3fv(skyp.u.uF, v.f); gl.uniform3fv(skyp.u.uR, v.r); gl.uniform3fv(skyp.u.uU, v.u); gl.uniform3fv(skyp.u.uSky, S.sky); gl.uniform3fv(skyp.u.uHor, S.hor); gl.uniform3fv(skyp.u.uSunDir, S.dir); gl.uniform3fv(skyp.u.uSunCol, S.col); gl.uniform3fv(skyp.u.uGnd, gnd);
+    gl.uniform1f(skyp.u.uTan, Math.tan(v.fy / 2)); gl.uniform1f(skyp.u.uAsp, v.asp); gl.uniform1f(skyp.u.uExp, hi ? expo : expo * .78); gl.uniform1f(skyp.u.uDay, S.day); gl.uniform1f(skyp.u.uDark, S.dark); gl.uniform1i(skyp.u.uHDR, hi ? 1 : 0);
     gl.bindVertexArray(null); gl.drawArrays(gl.TRIANGLES, 0, 3); gl.depthMask(true);
     gl.useProgram(prog); const u = prog.u;
     gl.uniformMatrix4fv(u.uVP, false, v.VP); gl.uniformMatrix4fv(u.uLVP, false, LVP);
-    gl.uniform3fv(u.uEye, v.eye); gl.uniform3fv(u.uSunDir, S.dir); gl.uniform3fv(u.uSunCol, S.col); gl.uniform3fv(u.uSky, S.hor.map((h, i) => (h + S.sky[i]) * .6)); gl.uniform3fv(u.uGnd, S.night ? [.01, .012, .018] : [.3, .27, .22].map(x => x * (.3 + S.amb)));
-    gl.uniform1f(u.uAmb, inside ? S.amb * .5 + .06 : S.amb); gl.uniform1f(u.uExp, expo);
+    gl.uniform3fv(u.uEye, v.eye); gl.uniform3fv(u.uSunDir, S.dir); gl.uniform3fv(u.uSunCol, S.col); gl.uniform3fv(u.uSky, S.hor.map((h, i) => (h + S.sky[i]) * .6)); gl.uniform3fv(u.uGnd, gnd); gl.uniform3fv(u.uHor, S.hor);
+    gl.uniform3fv(u.uSkyIrr, S.night ? [0, 0, 0] : S.hor.map((h, i) => (h * .6 + S.sky[i] * .5) * (1 + S.day)));
+    gl.uniform1f(u.uAmb, S.amb); gl.uniform1f(u.uInAmb, .14); gl.uniform1f(u.uWin, 2.4); gl.uniform1f(u.uInt, inside || G.mode == 'doll' || S.night ? 1 : .4 + .6 * (1 - S.day)); gl.uniform1f(u.uExp, hi ? expo : expo * .78); gl.uniform1f(u.uFog, inside || G.mode == 'doll' ? 0 : .0024); gl.uniform1f(u.uSoft, walk ? 1.4 : 2.2);
+    gl.uniform1i(u.uHDR, hi ? 1 : 0); gl.uniform1i(u.uHasAO, hi ? 1 : 0); gl.uniform2f(u.uFull, cv.width, cv.height);
     gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, stex); gl.uniform1i(u.uSh, 0);
+    gl.activeTexture(gl.TEXTURE3); gl.bindTexture(gl.TEXTURE_2D, hi ? X.ao2 : white); gl.uniform1i(u.uAO, 3);
     const ref = cam.mode == 'orbit' ? cam.tgt : cam.pos;
-    const ls = env.lightsOn ? scene.lights.slice().sort((p, q) => Math.hypot(p.p[0] - ref[0], (p.p[1] - ref[1]) * 3, p.p[2] - ref[2]) - Math.hypot(q.p[0] - ref[0], (q.p[1] - ref[1]) * 3, q.p[2] - ref[2])).slice(0, 16) : [];
+    const ls = env.lightsOn ? scene.lights.slice().sort((p, q) => Math.hypot(p.p[0] - ref[0], (p.p[1] - ref[1]) * 3, p.p[2] - ref[2]) - Math.hypot(q.p[0] - ref[0], (q.p[1] - ref[1]) * 3, q.p[2] - ref[2])).slice(0, 16) : scene.lights.slice().sort((p, q) => Math.hypot(p.p[0] - ref[0], p.p[2] - ref[2]) - Math.hypot(q.p[0] - ref[0], q.p[2] - ref[2])).slice(0, 16).map(l => ({ ...l, c: [0, 0, 0] }));
+    const dim = S.night ? 1 : clamp(1 - S.day * 3, 0, 1); for (let i = 0; i < ls.length; i++) if (ls[i].out) ls[i] = { ...ls[i], c: ls[i].c.map(x => x * dim) };
     const fl = k => { const a = new Float32Array(48); ls.forEach((l, i) => a.set(l[k], i * 3)); return a; };
     gl.uniform1i(u.uNL, ls.length);
-    if (ls.length) { gl.uniform3fv(u.uLP, fl('p')); gl.uniform3fv(u.uLC, fl('c')); gl.uniform3fv(u.uLA, fl('a')); gl.uniform3fv(u.uLB, fl('b')); }
+    if (ls.length) { gl.uniform3fv(u.uLP, fl('p')); gl.uniform3fv(u.uLC, fl('c')); gl.uniform3fv(u.uLA, fl('a')); gl.uniform3fv(u.uLB, fl('b')); const d = new Float32Array(16); ls.forEach((l, i) => d[i] = l.out ? -1 : S.night ? 0 : (l.d || 0)); gl.uniform1fv(u.uLD, d); }
+    const W = S.night ? [] : (scene.lights.win || []).slice().sort((p, q) => Math.hypot(p.p[0] - ref[0], (p.p[1] - ref[1]) * 3, p.p[2] - ref[2]) - Math.hypot(q.p[0] - ref[0], (q.p[1] - ref[1]) * 3, q.p[2] - ref[2])).slice(0, 12);
+    const wf = k => { const a = new Float32Array(36); W.forEach((l, i) => a.set(l[k], i * 3)); return a; };
+    gl.uniform1i(u.uNW, W.length); if (W.length) { gl.uniform3fv(u.uWP, wf('p')); gl.uniform3fv(u.uWN, wf('n')); gl.uniform3fv(u.uWA, wf('a')); gl.uniform3fv(u.uWB, wf('b')); gl.uniform1fv(u.uWS, new Float32Array(12).map((_, i) => W[i] ? W[i].s : 0)); }
     gl.uniform1f(u.uAlpha, 1); gl.enable(gl.CULL_FACE); gl.cullFace(gl.BACK); gl.bindVertexArray(vao); gl.drawArrays(gl.TRIANGLES, 0, nV);
-    if (nG) { gl.enable(gl.BLEND); gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA); gl.depthMask(false); gl.disable(gl.CULL_FACE); gl.uniform1f(u.uAlpha, .16); gl.bindVertexArray(gvao); gl.drawArrays(gl.TRIANGLES, 0, nG); gl.depthMask(true); gl.disable(gl.BLEND); }
+    if (nG) { gl.enable(gl.BLEND); gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA); gl.depthMask(false); gl.disable(gl.CULL_FACE); gl.uniform1f(u.uAlpha, .1); gl.bindVertexArray(gvao); gl.drawArrays(gl.TRIANGLES, 0, nG); gl.depthMask(true); gl.disable(gl.BLEND); }
     gl.bindVertexArray(null);
+    if (!X) return;
+    if (!hi) { gl.bindFramebuffer(gl.READ_FRAMEBUFFER, X.ms); gl.bindFramebuffer(gl.DRAW_FRAMEBUFFER, X.ldrF); gl.blitFramebuffer(0, 0, cv.width, cv.height, 0, 0, cv.width, cv.height, gl.COLOR_BUFFER_BIT, gl.NEAREST);
+      gl.bindFramebuffer(gl.FRAMEBUFFER, null); gl.viewport(0, 0, cv.width, cv.height); gl.disable(gl.DEPTH_TEST); gl.disable(gl.CULL_FACE); gl.useProgram(cpp); gl.activeTexture(gl.TEXTURE1); gl.bindTexture(gl.TEXTURE_2D, X.ldr); gl.uniform1i(cpp.u.uT, 1); quad(); gl.enable(gl.DEPTH_TEST); return; }
+    // 3. resolve, bloom, tone map
+    gl.bindFramebuffer(gl.READ_FRAMEBUFFER, X.ms); gl.bindFramebuffer(gl.DRAW_FRAMEBUFFER, X.hdrF); gl.blitFramebuffer(0, 0, cv.width, cv.height, 0, 0, cv.width, cv.height, gl.COLOR_BUFFER_BIT, gl.NEAREST);
+    gl.disable(gl.DEPTH_TEST); gl.disable(gl.CULL_FACE);
+    gl.useProgram(dnp); let src = X.hdr, sw = cv.width, shh = cv.height;
+    for (let i = 0; i < X.bl.length; i++) { const L = X.bl[i]; gl.bindFramebuffer(gl.FRAMEBUFFER, L.f); gl.viewport(0, 0, L.w, L.h); gl.activeTexture(gl.TEXTURE1); gl.bindTexture(gl.TEXTURE_2D, src); gl.uniform1i(dnp.u.uT, 1); gl.uniform2f(dnp.u.uPx, .5 / sw, .5 / shh); gl.uniform1f(dnp.u.uThr, 1.1 / expo); gl.uniform1i(dnp.u.uFirst, i == 0 ? 1 : 0); quad(); src = L.t; sw = L.w; shh = L.h; }
+    gl.useProgram(upp); gl.enable(gl.BLEND); gl.blendFunc(gl.ONE, gl.ONE);
+    for (let i = X.bl.length - 1; i > 0; i--) { const L = X.bl[i - 1], S2 = X.bl[i]; gl.bindFramebuffer(gl.FRAMEBUFFER, L.f); gl.viewport(0, 0, L.w, L.h); gl.activeTexture(gl.TEXTURE1); gl.bindTexture(gl.TEXTURE_2D, S2.t); gl.uniform1i(upp.u.uT, 1); gl.uniform2f(upp.u.uPx, 1 / S2.w, 1 / S2.h); quad(); }
+    gl.disable(gl.BLEND);
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null); gl.viewport(0, 0, cv.width, cv.height); gl.useProgram(cmp);
+    gl.activeTexture(gl.TEXTURE1); gl.bindTexture(gl.TEXTURE_2D, X.hdr); gl.uniform1i(cmp.u.uHdr, 1); gl.activeTexture(gl.TEXTURE2); gl.bindTexture(gl.TEXTURE_2D, X.bl[0].t); gl.uniform1i(cmp.u.uBl, 2);
+    if (env.debug == 'ao') { gl.bindTexture(gl.TEXTURE_2D, X.ao2); gl.activeTexture(gl.TEXTURE1); gl.bindTexture(gl.TEXTURE_2D, X.ao2); }
+    gl.uniform1f(cmp.u.uExp, env.debug == 'ao' ? 1 : expo); gl.uniform1f(cmp.u.uBloom, env.debug == 'ao' ? 0 : S.night ? .09 : .05); gl.uniform1f(cmp.u.uVig, .45); gl.uniform1f(cmp.u.uWarm, S.night ? 1 : (1 - S.day) * .8 + .2); quad();
+    gl.enable(gl.DEPTH_TEST);
   }
-  function req() { if (!raf) raf = requestAnimationFrame(draw); }
+  function req() { if (!raf) raf = requestAnimationFrame(() => { draw(); if (api.onDraw) api.onDraw(); }); }
   function ray(px, py) { const v = view(), rc2 = cv.getBoundingClientRect(), nx = (px - rc2.left) / rc2.width * 2 - 1, ny = 1 - (py - rc2.top) / rc2.height * 2, t = Math.tan(v.fy / 2); return { o: v.eye, d: nrm([v.f[0] + v.r[0] * nx * t * v.asp + v.u[0] * ny * t, v.f[1] + v.r[1] * nx * t * v.asp + v.u[1] * ny * t, v.f[2] + v.r[2] * nx * t * v.asp + v.u[2] * ny * t]) }; }
-  return { init, setScene, draw, req, ray, cam, env, sun, view, get scene() { return scene; }, sunDirty() { shDirty = true; req(); }, get ok() { return !!gl; }, get tris() { return (nV + nG) / 3; } };
+  const api = { init, setScene, draw, req, ray, cam, env, sun, view, get scene() { return scene; }, sunDirty() { shDirty = true; req(); }, get ok() { return !!gl; }, get tris() { return (nV + nG) / 3; }, get hdr() { return HDR; }, get pipe() { return T ? (T.hi ? 'hdr' : 'ldr') + ' x' + MS : 'direct'; } };
+  return api;
 })();
 
 // ---------- Photo render: progressive path tracer over the same boxes the live view draws ----------
@@ -5598,6 +5829,7 @@ function renderHeader() {
   p.className = 'pill' + (e ? ' bad' : w ? ' warn' : ''); p.lastChild.textContent = e ? `${e} to fix` : w ? `${w} to review` : 'All clear';
 }
 function go(v) {
+  if (v != 'view3d' && typeof liveStop == 'function') liveStop();
   UI.view = v; closeSheet(true); if (v != 'view3d') ptClose();
   if (v == 'brief') UI.step = 'brief'; else if (v == 'checks') UI.step = 'check'; else if (v == 'budget') UI.step = 'budget'; else if (v == 'package') UI.step = 'package'; else if (v == 'plan' && STEP_VIEW[UI.step] != 'plan') UI.step = 'layout';
   for (const s of document.querySelectorAll('main>section')) s.classList.toggle('on', s.id == 'v-' + v);
@@ -6255,6 +6487,53 @@ function ratesSheet() {
   return `<p class="muted">Dollars before HST. Type the low and high numbers from your own quotes; the estimate updates as you go. House and basement rates shown are for the ${COST_LEVELS[c.level][0].toLowerCase()} level.</p><div class="row rrow" style="border:0;padding:0"><span></span><b style="width:86px;font-size:12.5px">Low</b><b style="width:86px;font-size:12.5px">High</b></div>` + RATE_ROWS.map(([k, label, unit, basis]) => { const r = rateOf(k, c.level, c), rk = rateKey(k, c.level); return `<div class="row rrow"><span>${esc(label)}<small>${unit}${basis == 'a' ? ' · allowance' : ''}${c.r[rk] ? ' · yours' : ''}</small></span><input type="number" inputmode="decimal" step="any" id="r-${k}-0" aria-label="${esc(label)}, low" data-f="crate" data-k="${rk}" data-i="0" value="${r[0]}"><input type="number" inputmode="decimal" step="any" id="r-${k}-1" aria-label="${esc(label)}, high" data-f="crate" data-k="${rk}" data-i="1" value="${r[1]}"></div>`; }).join('') + `<div class="row"><button class="btn" data-a="crreset">Put all rates back</button></div>`;
 }
 
+// ---------- Realistic mode: when the view stops moving, it is path traced (real bounced light, soft shadows, reflections) and faded in over the live view ----------
+const RLIVE = { on: (() => { try { return localStorage.getItem('housewright.live') != '0'; } catch (e) { return true; } })(), t: 0, run: false, shown: false, gen: 0, ctx: null, spp: 0 };
+function liveSave() { try { localStorage.setItem('housewright.live', RLIVE.on ? '1' : '0'); } catch (e) { } }
+function liveUI() {
+  const b = $('glive'); if (!b) return;
+  b.classList.toggle('p', RLIVE.on); b.textContent = 'Realistic';
+  const st = $('glivest'); if (st) { st.hidden = !RLIVE.on || !RLIVE.run; st.textContent = RLIVE.shown ? (RLIVE.spp >= RLIVE.target ? 'Photo-real' : 'Refining light…') : 'Tracing light…'; }
+}
+function liveStop() {
+  RLIVE.gen++; clearTimeout(RLIVE.t);
+  if (RLIVE.run && typeof PT != 'undefined' && PT.running) PT.stop();
+  RLIVE.run = false; RLIVE.shown = false; RLIVE.spp = 0;
+  const c = $('ptlive'); if (c) { c.classList.remove('on'); c.hidden = true; }
+  liveUI();
+}
+function liveKick() { // the live view just changed: drop the photo and wait for the next pause
+  if (RLIVE.run || RLIVE.shown) liveStop();
+  clearTimeout(RLIVE.t);
+  if (!RLIVE.on || UI.view != 'view3d' || !GLR.ok || !GLR.scene) return;
+  RLIVE.t = setTimeout(liveStart, window.LIVE_DELAY || 1100);
+}
+function liveStart() {
+  if (!RLIVE.on || UI.view != 'view3d' || !GLR.scene || UI.edit3d || UI.sheet && $('v-view3d').classList.contains('half')) return;
+  if ((typeof SHOOT != 'undefined' && SHOOT.running) || (typeof WALK != 'undefined' && WALK.running) || !$('ptwrap').hidden || PT.running) return;
+  if (!PT.init($('pt'))) { RLIVE.on = false; liveSave(); liveUI(); toast((PT.why || 'Realistic mode is not available here.') + ' The live view stays on.', 5000); return; }
+  const g = $('gl'), cw = g.clientWidth || 2, ch = g.clientHeight || 2, k = Math.min(1.5, Math.sqrt((window.LIVE_BUDGET || 330000) / (cw * ch)));
+  const sc = GLR.scene, V0 = GLR.view(), e = V0.eye; sc.near = G.mode == 'in' ? [e[0] - 11, e[1] - 4, e[2] - 11, e[0] + 11, e[1] + 4, e[2] + 11] : null;
+  const gen = ++RLIVE.gen; RLIVE.target = window.LIVE_PASSES || 220;
+  RLIVE.run = PT.start({ scene: sc, view: V0, sun: GLR.sun(), lights: GLR.env.lightsOn ? sc.lights.fine : [], w: Math.max(16, Math.round(cw * k)), h: Math.max(16, Math.round(ch * k)), passes: RLIVE.target, onTick: s => liveTick(gen, s) });
+  liveUI();
+}
+function liveTick(gen, s) {
+  if (gen != RLIVE.gen) return;
+  if (s.lost || UI.view != 'view3d') { liveStop(); return; }
+  RLIVE.spp = s.spp;
+  if (s.spp >= 6) {
+    const c = $('ptlive'), p = $('pt'), g = $('gl');
+    if (c.width != p.width || c.height != p.height) { c.width = p.width; c.height = p.height; RLIVE.ctx = null; }
+    c.style.top = g.offsetTop + 'px'; c.style.height = g.offsetHeight + 'px';
+    (RLIVE.ctx || (RLIVE.ctx = c.getContext('2d'))).drawImage(p, 0, 0);
+    if (!RLIVE.shown) { c.hidden = false; requestAnimationFrame(() => c.classList.add('on')); RLIVE.shown = true; }
+  }
+  if (s.done) RLIVE.run = false;
+  liveUI();
+}
+GLR.onDraw = liveKick;
+
 // ---------- 3D view, checks view, builder package, actions, start-up ----------
 const G = { mode: 'ext', lv: 'M', room: null, key: null, camKey: null, dirty: true, tried: false };
 const hourLabel = h => { const m = Math.round(h * 60), hh = Math.floor(m / 60), mm = m % 60; return `${(hh + 11) % 12 + 1}:${String(mm).padStart(2, '0')} ${hh < 12 ? 'am' : 'pm'}`; };
@@ -6269,7 +6548,7 @@ function render3DUI() {
   }
   const hint = G.mode == 'in' ? 'Drag to look around. Tap the floor to walk there.' : 'Drag to orbit. Pinch to zoom.'; if ($('ghint').textContent != hint) { $('ghint').textContent = hint; $('ghint').hidden = false; }
   $('gtime').value = GLR.env.hour; $('gtl').textContent = hourLabel(GLR.env.hour); $('gmonth').value = GLR.env.month;
-  $('glights').textContent = GLR.env.lightsOn ? 'Lights on' : 'Lights off'; $('gsnap').hidden = !CAP.dl; if ($('gedit')) { $('gedit').classList.toggle('p', !!UI.edit3d); $('gedit').textContent = UI.edit3d ? 'Editing' : 'Edit'; } render3DEdit();
+  $('glights').textContent = GLR.env.lightsOn ? 'Lights on' : 'Lights off'; $('glights').classList.toggle('p', !!GLR.env.lightsOn); $('gsnap').hidden = !CAP.dl; if ($('gedit')) { $('gedit').classList.toggle('p', !!UI.edit3d); $('gedit').textContent = UI.edit3d ? 'Editing' : 'Edit'; } render3DEdit(); if (typeof liveUI == 'function') liveUI();
 }
 function camFor() {
   const C = GLR.cam, cv = $('gl'), asp = (cv.clientWidth || 1) / (cv.clientHeight || 1);
@@ -6346,6 +6625,7 @@ function photoTick(s) {
 }
 function startPhoto() {
   if (!GLR.ok || !GLR.scene) { toast('Open the 3D view first.'); return; }
+  if (typeof liveStop == 'function') liveStop();
   if (!PT.init($('pt'))) { toast((PT.why || 'The photo render is not available here.') + ' You can still save the live view.', 5200); return; }
   const g = $('gl'), cw = g.clientWidth || 2, ch = g.clientHeight || 2, k = Math.min(2, Math.sqrt((window.PT_BUDGET || 420000) / (cw * ch)));
   $('ptwrap').hidden = false; $('ptimg').hidden = true; $('pt').hidden = false; $('ptsave').hidden = !CAP.dl; $('ptbar').firstChild.style.width = '0'; $('pttext').textContent = 'Building the scene';
@@ -6575,6 +6855,7 @@ const A = {
   histfwd: t => { const n = +t.dataset.v; for (let i = 0; i < n; i++) if (!stepFwd()) break; afterJump(); renderSheet(); },
   gmode: t => { G.mode = t.dataset.v; G.camKey = null; show3D(); },
   lights: () => { GLR.env.lightsOn = !GLR.env.lightsOn; render3DUI(); GLR.req(); },
+  livetog: () => { RLIVE.on = !RLIVE.on; liveSave(); if (RLIVE.on) { toast('Realistic: when you stop moving, the view is traced with real light. Moving brings back the live view.', 5200); liveKick(); } else liveStop(); liveUI(); },
   photo: () => openSheet('photo'),
   shoot: () => shootRun(), shootq: t => { SHOOT.q = t.dataset.v; renderPkg(); }, shootsmall: () => { SHOOT.small = !SHOOT.small; renderPkg(); },
   shotsave: async t => { const s = photosList()[+t.dataset.i]; if (!s) return; let b = null; try { b = s.src.startsWith('data:') ? dataToBlob(s.src) : await (await fetch(s.src)).blob(); } catch (e) { toast('That photo could not be loaded.'); return; } dl(slug() + '-' + s.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/-$/, '') + '.jpg', b); },
@@ -6597,7 +6878,7 @@ const A = {
   llamps: () => { const r = cur(), n = lampsBy(r); commit(); renderSheet(); renderPlan(); toast(n ? `${n} lamps added.` : 'No side tables or seating here to put lamps by.', 3600); },
   lclear: () => { const r = cur(); r.items = r.items.filter(i => ITEMS[i.k].c != 'Lighting'); UI.selItem = null; commit(); renderSheet(); renderPlan(); },
   lrm: t => { const r = cur(); r.items = r.items.filter(i => i.k != t.dataset.k); UI.selItem = null; commit(); renderSheet(); renderPlan(); },
-  snap: () => { GLR.draw(); $('gl').toBlob(b => { if (b) dl(slug() + '-view.png', b); }, 'image/png'); },
+  snap: () => { if (RLIVE.shown) { $('pt').toBlob(b => { if (b) dl(slug() + '-photo.jpg', b); }, 'image/jpeg', .93); return; } GLR.draw(); $('gl').toBlob(b => { if (b) dl(slug() + '-view.png', b); }, 'image/png'); },
   copy: t => copyText($(t.dataset.id).value), copyjson: () => copyText(JSON.stringify(P)), copypkg: async () => { await photoCache(); copyText(pkgFile()); }, copysched: () => copyText(scheduleCSV()), dlsched: () => dl(slug() + '-finish-schedule.csv', scheduleCSV()),
   dlpkg: async () => { await photoCache(); dl(slug() + '-design-package.html', pkgFile()); }, dljson: () => dl(slug() + '.json', JSON.stringify(P, null, 1)),
   openjson: () => $('file').click(),
