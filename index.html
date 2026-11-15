@@ -689,6 +689,9 @@ Object.assign(MATS, {
   batten_navy: ['Board and batten, navy', 14, '#2a3a55', '#2a3a55', .7, .4, 'x'],
   cedar_vert: ['Vertical cedar', 1, '#b07c4f', '#8e5f39', .7, .14, 'x'],
   charred: ['Charred cedar (shou sugi ban)', 1, '#2a2522', '#1a1716', .8, .14, 'x'],
+  cedar_grey: ['Vertical cedar, weathered silver-grey', 1, '#9b9890', '#7a776f', .8, .14, 'x'],
+  cedar_dark: ['Vertical cedar, dark stain', 1, '#4a4038', '#3a322b', .8, .14, 'x'],
+  glass_frost: ['Frosted glass', 0, '#cfd6da', '#cfd6da', .2, 1, '-'],
   shake_grey: ['Weathered shingle, grey', 9, '#8f8b84', '#77736c', .85, 1, 'x'],
   shake_white: ['Painted shingle, white', 9, '#e9e7e1', '#d5d2cb', .8, 1, 'x'],
   brick_brown: ['Brick, brown', 6, '#6b4a3a', '#bdb5a8', .85, 1, 'x'],
@@ -3406,7 +3409,7 @@ const STYLES = {
 };
 function mainRoof(list) { return (list || roofs()).reduce((m, r) => !m || r.w * r.d > m.w * m.d + .01 ? r : m, null); }
 function roofGeom(r) {
-  const e = .45, p = P.ext.pitch, x = r.ax == 'x', hipOn = P.ext.shape == 'hip', abA = x ? r.ab.W : r.ab.N, abB = x ? r.ab.E : r.ab.S;
+  const e = clamp(+P.ext.eave || .45, .2, 1), p = P.ext.pitch, x = r.ax == 'x', hipOn = P.ext.shape == 'hip', abA = x ? r.ab.W : r.ab.N, abB = x ? r.ab.E : r.ab.S;
   const U0 = (x ? r.x0 : r.y0) - (abA ? 0 : e), U1 = (x ? r.x1 : r.y1) + (abB ? 0 : e), v0 = x ? r.y0 : r.x0, v1 = x ? r.y1 : r.x1, vm = (v0 + v1) / 2;
   const ye = r.base + .03 - (e - .17) * p, yr = r.base + .03 + ((v1 - v0) / 2 + .17) * p, hl = (v1 - v0) / 2 + e, hipA = hipOn && !abA, hipB = hipOn && !abB;
   let ua = hipA ? U0 + hl : U0, ub = hipB ? U1 - hl : U1;
@@ -3439,6 +3442,7 @@ function setPorch(kind) {
 function applyStyle(key) {
   const s = STYLES[key]; if (!s) return; const o = s[2];
   for (const k of ['siding', 'roof', 'pitch', 'shape', 'frame', 'grilles', 'shutters', 'accent', 'gable', 'dormers', 'door', 'gdoor', 'gwin']) P.ext[k] = o[k];
+  P.ext.eave = o.eave || .45; P.ext.gglass = !!o.gglass; P.ext.sconce = o.sconce || 'lantern'; if (o.entry && o.entry != P.ext.entry) setEntry(o.entry); else if (!o.entry && P.ext.entry == 'glass') setEntry('panel');
   P.ext.cupola = !!o.cupola; P.ext.style = key; P.ext.porch = o.porch; setPorch(o.porch);
 }
 function extSheet() {
@@ -3448,11 +3452,39 @@ function extSheet() {
   const pick = (k, list, cur) => `<div class="chips">${list.map(([v, n]) => `<button class="chip${String(cur) == String(v) ? ' on' : ''}" data-a="xset" data-k="${k}" data-v="${v}">${n}</button>`).join('')}</div>`;
   let h = `<div class="tabs" style="padding:0 0 4px">${tabs.map(([k, n]) => `<button data-a="xtab" data-v="${k}" class="${tab == k ? 'on' : ''}">${n}</button>`).join('')}</div>`;
   if (tab == 'style') h += `<p class="muted">One tap sets cladding, roof, trim, porch and details together. Fine-tune in the other tabs.</p><div class="opts">${Object.entries(STYLES).map(([k, s]) => `<button class="opt${X.style == k ? ' on' : ''}" data-a="xstyle" data-v="${k}"><div class="bars">${s[3].map(c => `<i style="background:${c}"></i>`).join('')}</div><b>${s[0]}</b><span>${s[1]}</span></button>`).join('')}</div>`;
-  else if (tab == 'roof') { const big = mainRoof(); h += `<h3>Shape</h3>${pick('shape', ROOF_SHAPES, shapeOf())}${classicRoof() ? '' : '<p class="muted">Dormers and the solar array are drawn on gable and hip roofs only.</p>'}<h3>Cupola</h3>${pick('cupola', [[0, 'None'], [1, 'Cupola on the main ridge']], P.ext.cupola ? 1 : 0)}<h3>Pitch</h3>${pick('pitch', [[.25, '3 in 12'], [.333, '4 in 12'], [.5, '6 in 12'], [.667, '8 in 12'], [.833, '10 in 12'], [1, '12 in 12']], X.pitch)}<h3>Dormers on the front slope</h3>${pick('dormers', [[0, 'None'], [1, '1'], [2, '2'], [3, '3']], X.dormers | 0)}${(X.dormers | 0) && big && !dormerSpots(big, roofGeom(big)).length ? '<p class="warnbox">Dormers need a ridge that runs along the street and a roof steep enough to hold them. Try a steeper pitch.</p>' : ''}<h3>Roofing</h3>${matCard('roof', X.roof, null)}${sw('roof', mats('r'), X.roof)}`; }
+  else if (tab == 'roof') { const big = mainRoof(); h += `<h3>Shape</h3>${pick('shape', ROOF_SHAPES, shapeOf())}${classicRoof() ? '' : '<p class="muted">Dormers and the solar array are drawn on gable and hip roofs only.</p>'}<h3>Cupola</h3>${pick('cupola', [[0, 'None'], [1, 'Cupola on the main ridge']], P.ext.cupola ? 1 : 0)}<h3>Pitch</h3>${pick('pitch', [[.25, '3 in 12'], [.333, '4 in 12'], [.5, '6 in 12'], [.667, '8 in 12'], [.833, '10 in 12'], [1, '12 in 12']], X.pitch)}<h3>Overhang at the eaves and gable ends</h3>${pick('eave', [[.2, 'Almost none'], [.3, 'Tight'], [.45, 'Standard'], [.7, 'Deep']], +X.eave || .45)}<h3>Dormers on the front slope</h3>${pick('dormers', [[0, 'None'], [1, '1'], [2, '2'], [3, '3']], X.dormers | 0)}${(X.dormers | 0) && big && !dormerSpots(big, roofGeom(big)).length ? '<p class="warnbox">Dormers need a ridge that runs along the street and a roof steep enough to hold them. Try a steeper pitch.</p>' : ''}<h3>Roofing</h3>${matCard('roof', X.roof, null)}${sw('roof', mats('r'), X.roof)}`; }
   else if (tab == 'walls') h += `<h3>Cladding</h3>${matCard('siding', X.siding, null)}${sw('siding', mats('x'), X.siding)}<h3>Base band, to window-sill height</h3>${sw('accent', [['', 'None', '#ffffff'], ...mats('x').filter(([k]) => [6, 17, 16, 14].includes(MATS[k][1]) || /^panel_/.test(k))], X.accent || '')}<h3>Gable ends</h3>${sw('gable', [['', 'Same as walls', matHex(X.siding)], ...mats('x').filter(([k]) => [9, 14, 1, 7].includes(MATS[k][1]))], X.gable || '')}`;
-  else if (tab == 'windows') h += `<h3>Frame colour</h3>${sw('frame', [['trim', 'White', '#f4f3ef'], ['matte_black', 'Black', '#18181a'], ['bronze', 'Bronze', '#4a3b2e'], ['charcoal', 'Charcoal', '#3b3d42'], ['wood', 'Wood clad', '#8a623f'], ['steel', 'Silver', '#b9bdc2']], X.frame || 'trim')}<h3>Grilles</h3>${pick('grilles', [[0, 'Clear glass'], [1, 'Divided panes']], X.grilles ? 1 : 0)}<h3>Shutters</h3>${sw('shutters', [['', 'None', '#ffffff'], ['#1c1c1f', 'Black', '#1c1c1f'], ['#27364f', 'Navy', '#27364f'], ['#3f5a45', 'Green', '#3f5a45'], ['#f4f3ef', 'White', '#f4f3ef'], ['#7a3b22', 'Barn red', '#7a3b22']], X.shutters || '')}`;
-  else h += `<h3>Front porch</h3>${pick('porch', [['none', 'Steps only'], ['portico', 'Entry portico'], ['full', 'Full-width porch']], X.porch || 'none')}${frontDoor() ? '' : '<p class="warnbox">Add an exterior door on a south wall first; the porch attaches to it.</p>'}<p class="muted">The porch appears on the Site plan, where you can drag and resize it.</p><h3>Front door</h3>${sw('door', [['#b5472f', 'Red', '#b5472f'], ['#1c1c1f', 'Black', '#1c1c1f'], ['#27364f', 'Navy', '#27364f'], ['#3f5a45', 'Green', '#3f5a45'], ['#c8843c', 'Natural wood', '#c8843c'], ['#6b4a33', 'Walnut', '#6b4a33'], ['#e8c33a', 'Yellow', '#e8c33a'], ['#2f6f73', 'Teal', '#2f6f73'], ['#8c9a84', 'Sage', '#8c9a84'], ['#7d8ea0', 'Slate blue', '#7d8ea0'], ['#d9876a', 'Coral', '#d9876a'], ['#f4f3ef', 'White', '#f4f3ef']], X.door)}<h3>Garage door</h3>${sw('gdoor', [['#e9e8e3', 'White', '#e9e8e3'], ['#26282b', 'Black', '#26282b'], ['#8a6240', 'Wood tone', '#8a6240'], ['#c29a6b', 'Light oak tone', '#c29a6b'], ['#8d949b', 'Grey', '#8d949b'], ['#45484d', 'Charcoal', '#45484d'], ['#2a3a55', 'Navy', '#2a3a55']], X.gdoor || '#e9e8e3')}${pick('gwin', [[0, 'Solid panels'], [1, 'Window row']], X.gwin ? 1 : 0)}`;
+  else if (tab == 'windows') h += `<h3>Window size</h3><p class="muted">Changes the outside windows of the living rooms and bedrooms. Bathrooms, closets and the laundry keep theirs.</p>${pick('glaze', Object.entries(GLAZE), X.glaze || 'std')}<h3>Frame colour</h3>${sw('frame', [['trim', 'White', '#f4f3ef'], ['matte_black', 'Black', '#18181a'], ['bronze', 'Bronze', '#4a3b2e'], ['charcoal', 'Charcoal', '#3b3d42'], ['wood', 'Wood clad', '#8a623f'], ['steel', 'Silver', '#b9bdc2']], X.frame || 'trim')}<h3>Grilles</h3>${pick('grilles', [[0, 'Clear glass'], [1, 'Divided panes']], X.grilles ? 1 : 0)}<h3>Shutters</h3>${sw('shutters', [['', 'None', '#ffffff'], ['#1c1c1f', 'Black', '#1c1c1f'], ['#27364f', 'Navy', '#27364f'], ['#3f5a45', 'Green', '#3f5a45'], ['#f4f3ef', 'White', '#f4f3ef'], ['#7a3b22', 'Barn red', '#7a3b22']], X.shutters || '')}`;
+  else h += `<h3>Front porch</h3>${pick('porch', [['none', 'Steps only'], ['portico', 'Entry portico'], ['full', 'Full-width porch']], X.porch || 'none')}${frontDoor() ? '' : '<p class="warnbox">Add an exterior door on a south wall first; the porch attaches to it.</p>'}<p class="muted">The porch appears on the Site plan, where you can drag and resize it.</p><h3>Front door</h3>${sw('door', [['#b5472f', 'Red', '#b5472f'], ['#1c1c1f', 'Black', '#1c1c1f'], ['#27364f', 'Navy', '#27364f'], ['#3f5a45', 'Green', '#3f5a45'], ['#c8843c', 'Natural wood', '#c8843c'], ['#6b4a33', 'Walnut', '#6b4a33'], ['#e8c33a', 'Yellow', '#e8c33a'], ['#2f6f73', 'Teal', '#2f6f73'], ['#8c9a84', 'Sage', '#8c9a84'], ['#7d8ea0', 'Slate blue', '#7d8ea0'], ['#d9876a', 'Coral', '#d9876a'], ['#f4f3ef', 'White', '#f4f3ef']], X.door)}<h3>Garage door</h3>${sw('gdoor', [['#e9e8e3', 'White', '#e9e8e3'], ['#26282b', 'Black', '#26282b'], ['#8a6240', 'Wood tone', '#8a6240'], ['#c29a6b', 'Light oak tone', '#c29a6b'], ['#8d949b', 'Grey', '#8d949b'], ['#45484d', 'Charcoal', '#45484d'], ['#2a3a55', 'Navy', '#2a3a55']], X.gdoor || '#e9e8e3')}${pick('gstyle', [['panel', 'Solid panels'], ['row', 'Window row'], ['glass', 'Full-view glass']], X.gglass ? 'glass' : X.gwin ? 'row' : 'panel')}<h3>Entry door</h3>${pick('entry', [['panel', 'Panelled door'], ['glass', 'Glass door, sidelights and transom']], X.entry || 'panel')}<h3>Wall lights</h3>${pick('sconce', [['lantern', 'Lantern'], ['cylinder', 'Up and down cylinder']], X.sconce || 'lantern')}`;
   return h;
+}
+
+// ---------- entry door and window size, as whole-house changes ----------
+function frontEntry() { const fd = typeof frontDoor == 'function' ? frontDoor() : null; if (fd) return fd; for (const r of indoor('M')) for (const d of r.doors) if (d.kind == 'exterior') return { r, d }; return null; }
+function setEntry(v) { // a glass entry is a wider unit: the door plus full-height sidelights and a transom
+  P.ext.entry = v; const fe = frontEntry(); if (!fe) return false; const d = fe.d || fe.door || fe, r = fe.r || fe.room; if (!d || !r || d.kind != 'exterior') return false;
+  const e = edge(r, d.wall), len = e.b - e.a;
+  if (v == 'glass') { if (d.w < 1.5) { d.w0 = d.w0 || d.w; d.w = r2(Math.min(1.7, len - .4)); d.p = r2(clamp(d.p, d.w / 2 + .1, len - d.w / 2 - .1)); } d.tr = true; }
+  else { if (d.w0) { d.w = d.w0; delete d.w0; } d.tr = false; }
+  return true;
+}
+const GLAZE = { std: 'Standard', large: 'Larger', max: 'Floor to ceiling' };
+function applyGlaze(v) { // make the living spaces' outside windows bigger; wet rooms and closets keep theirs
+  P.ext.glaze = v; if (v == 'std') return 0; let n = 0;
+  for (const r of indoor()) {
+    if (r.lv == 'B' && !(typeof walkoutWall == 'function')) continue;
+    if (['bathroom', 'ensuite', 'powder', 'laundry', 'closet', 'wic', 'pantry', 'mudroom', 'garage', 'storage', 'mech', 'stairs', 'hall'].includes(r.type)) continue;
+    const H = (P.lv[r.lv] || { h: 2.6 }).h;
+    for (const w of r.wins) {
+      if (!onExt(r, w) || ['round', 'arched', 'bay', 'clerestory', 'awning'].includes(w.style)) continue;
+      if (r.lv == 'B' && !walkoutWall(w.wall)) continue;
+      const e = edge(r, w.wall), len = e.b - e.a;
+      if (v == 'max') { w.sill = .3; w.h = r2(H - .3 - .25); w.w = r2(Math.min(len - .5, Math.max(w.w * 1.6, 1.8))); if (w.style != 'glasswall') w.style = w.w > 2.2 ? 'picture' : 'casement'; }
+      else { w.h = r2(Math.max(w.h, Math.min(1.85, H - .55 - .5))); w.sill = r2(Math.min(w.sill, H - .3 - w.h)); w.w = r2(Math.min(len - .5, Math.max(w.w * 1.35, 1.2))); }
+      w.p = r2(clamp(w.p, w.w / 2 + .1, len - w.w / 2 - .1)); n++;
+    }
+  }
+  resolveOpenings(); return n;
 }
 
 // ---------- Whole-house generator: turns a short brief into a complete, code-checked layout ----------
@@ -3492,6 +3524,7 @@ const LOOKS = {
   scandi: ['Scandinavian', 'White walls, maple floors, sage kitchen', { floor: 'maple', walls: 'white', cab: 'cab_sage', ctr: 'butcher', bed: 'maple', bedw: 'white', accent: 'sage' }, ['#f2f1ec', '#dcc39a', '#8c9a84']]
 };
 function defaultBrief() { return { text: '', lotW: 30, lotD: 42, storeys: 2, size: 'family', beds: 4, garage: 2, front: 'office', basement: true, bx: ['theater', 'rec', 'gym'], bbath: false, wine: false, out: ['deck', 'yard', 'garden'], look: 'coastal', style: 'harbour', siding: '', roof: '', tech: TECH_SETS.efficient.slice() }; }
+const GLAZE_KEYS = ['std', 'large', 'max'];
 function cleanBrief(o) {
   const d = defaultBrief(), b = Object.assign({}, d, o && typeof o == 'object' ? o : {});
   b.storeys = +b.storeys == 1 ? 1 : 2; b.size = SIZES[b.size] ? b.size : 'family'; b.beds = clamp(Math.round(+b.beds) || 3, 2, 5); b.garage = clamp(Math.round(+b.garage) || 0, 0, 3);
@@ -3500,10 +3533,28 @@ function cleanBrief(o) {
   b.out = [...new Set((Array.isArray(b.out) ? b.out : []).filter(k => ['deck', 'patio', 'yard', 'garden'].includes(k)))];
   b.look = LOOKS[b.look] ? b.look : 'coastal'; b.style = STYLES[b.style] ? b.style : ''; b.siding = MATS[b.siding] && MATS[b.siding][6].includes('x') ? b.siding : ''; b.roof = MATS[b.roof] && MATS[b.roof][6].includes('r') ? b.roof : '';
   b.tech = [...new Set((Array.isArray(b.tech) ? b.tech : []).filter(k => TECH.some(t => t[0] == k)))];
-  b.lotW = clamp(+b.lotW || 30, 12, 300); b.lotD = clamp(+b.lotD || 42, 20, 300); b.text = String(b.text || '').slice(0, 1200);
+  b.lotW = clamp(+b.lotW || 30, 12, 300); b.lotD = clamp(+b.lotD || 42, 20, 300); b.text = String(b.text || '').slice(0, 8000);
+  b.bbeds = b.bbeds == null || b.bbeds === '' ? null : clamp(Math.round(+b.bbeds) || 0, 0, 3); b.walkout = !!b.walkout && b.basement;
+  b.footprint = typeof FOOTPRINTS != 'undefined' && FOOTPRINTS.some(f => f[0] == b.footprint) ? b.footprint : '';
+  const FEATS = ['glassRear', 'cathedralLiving', 'vaultPrimary', 'skylights', 'mediaWall', 'bifoldDeck', 'archEntry', 'mudLockers'];
+  b.features = [...new Set((Array.isArray(b.features) ? b.features : []).filter(k => typeof k == 'string' && (FEATS.includes(k) || /^kitchen:(L|U|galley)$/.test(k) || (typeof YARD_PACKS != 'undefined' && /^yard:/.test(k) && YARD_PACKS[k.slice(5)]))))];
+  b.roomStyle = typeof ROOM_STYLES != 'undefined' && ROOM_STYLES[b.roomStyle] ? b.roomStyle : '';
+  const x = b.ext && typeof b.ext == 'object' ? b.ext : {}, X = {};
+  if (+x.pitch > 0) X.pitch = clamp(+x.pitch > 2 ? +x.pitch / 12 : +x.pitch, .17, 1.17);
+  if (['gable', 'hip', 'shed', 'flat', 'gambrel', 'mansard'].includes(x.shape)) X.shape = x.shape;
+  if (+x.eave > 0) X.eave = clamp(+x.eave, .2, 1); else if ({ none: 1, tight: 1, standard: 1, deep: 1 }[x.eave]) X.eave = { none: .2, tight: .3, standard: .45, deep: .7 }[x.eave];
+  if (['trim', 'matte_black', 'bronze', 'charcoal', 'wood', 'steel'].includes(x.frame)) X.frame = x.frame; else if (x.frame == 'black') X.frame = 'matte_black'; else if (x.frame == 'white') X.frame = 'trim';
+  if (GLAZE_KEYS.includes(x.glaze)) X.glaze = x.glaze; if (x.garage_door == 'glass' || x.gglass === true) X.gglass = true; if (x.garage_door == 'panel') X.gglass = false; if (x.garage_door == 'row') X.gwin = true;
+  if (['glass', 'panel'].includes(x.entry)) X.entry = x.entry; if (['cylinder', 'lantern'].includes(x.sconce)) X.sconce = x.sconce;
+  for (const k of ['door', 'gdoor']) if (/^#[0-9a-f]{6}$/i.test(x[k] || '')) X[k] = x[k];
+  b.ext = X;
   return b;
 }
-function bsmtPlan(b) { const bedN = b.storeys == 2 ? Math.min(b.beds, 4) : Math.min(b.beds, 3), guest = b.basement && (b.beds > bedN || b.bx.includes('guest')); return { bedN, guest, want: (guest ? ['guest'] : []).concat(b.bx.filter(k => k != 'guest')).slice(0, 3) }; }
+function bsmtPlan(b) {
+  const cap = b.storeys == 2 ? 4 : 3, bb = b.basement && b.bbeds != null ? Math.min(b.bbeds, 3, b.beds - 1) : null;
+  const bedN = bb != null ? clamp(b.beds - bb, 1, cap) : Math.min(b.beds, cap), gN = b.basement ? Math.min(3, Math.max(b.beds - bedN, b.bx.includes('guest') ? 1 : 0)) : 0;
+  return { bedN, guest: gN > 0, gN, want: Array(gN).fill('guest').concat(b.bx.filter(k => k != 'guest')).slice(0, 3) };
+}
 function briefSize(b) { const [W, D] = SIZES[b.size], wing = b.storeys == 1 ? 7.2 : 0, gw = GAR_W[b.garage]; return { W, D, wing, gw, total: wing + W + gw, main: (wing ? 7.2 * D : 0) + W * D, upper: b.storeys == 2 ? W * D : 0, bsmt: b.basement ? W * D : 0 }; }
 function briefFromText(text) { // offline reading of a free description
   const s = ' ' + text.toLowerCase() + ' ', b = {}, num = w => ({ one: 1, two: 2, three: 3, four: 4, five: 5 }[w] || +w);
@@ -3514,24 +3565,61 @@ function briefFromText(text) { // offline reading of a free description
   const bx = []; if (/theat|cinema|movie/.test(s)) bx.push('theater'); if (/rec room|bar\b|pool table|games/.test(s)) bx.push('rec'); if (/gym|workout|fitness/.test(s)) bx.push('gym'); if (/guest/.test(s)) bx.push('guest'); if (/workshop/.test(s)) bx.push('workshop');
   if (bx.length) { b.bx = bx; b.basement = b.basement !== false; }
   if (/wine/.test(s)) b.wine = true;
-  const out = []; if (/deck/.test(s)) out.push('deck'); if (/patio|fire pit/.test(s)) out.push('patio'); if (/dog|fence|yard/.test(s)) out.push('yard'); if (/garden/.test(s)) out.push('garden'); if (out.length) b.out = out;
+  const out = []; if (/deck|terrace/.test(s)) out.push('deck'); if (/patio|fire pit/.test(s)) out.push('patio'); if (/dog|fence|yard/.test(s)) out.push('yard'); if (/garden/.test(s)) out.push('garden'); if (out.length) b.out = out;
   if (/small|compact|modest/.test(s)) b.size = 'compact'; if (/large|big|spacious/.test(s)) b.size = 'large';
   if (/dining room/.test(s)) b.front = 'dining';
   if (/farmhouse/.test(s)) b.style = 'farmhouse'; else if (/cape|shake|shingle style/.test(s)) b.style = 'cape'; else if (/craftsman|bungalow style/.test(s)) b.style = 'craftsman'; else if (/modern|minimal/.test(s)) b.style = 'modern';
   if (/modern|minimal/.test(s)) b.look = 'modern'; if (/scandi|nordic/.test(s)) b.look = 'scandi'; if (/classic|traditional|warm/.test(s)) b.look = 'classic';
   if (/net[\s-]?zero|passive/.test(s)) b.tech = TECH_SETS.netzero.slice(); else { const t = []; if (/solar/.test(s)) t.push('solar'); if (/batter/.test(s)) t.push('battery'); if (/ev\b|electric (car|vehicle)|tesla/.test(s)) t.push('ev'); if (/smart/.test(s)) t.push('smart_home', 'smart_panel'); if (t.length) b.tech = [...new Set([...TECH_SETS.efficient, ...t])]; }
+  if (/new barn|nordic barn|scandinavian barn|barn[\s-]?style/.test(s) || (/scandinavian|nordic/.test(s) && /barn|metal roof|standing[\s-]seam/.test(s))) b.style = 'newbarn'; else if (/scandinavian|nordic/.test(s) && !b.style) b.style = 'nordic';
+  const X = {}; m = s.match(/(\d{1,2})\s*\/\s*12/); if (m) X.pitch = +m[1]; else if (/steep/.test(s)) X.pitch = 10;
+  if (/no overhang|almost no overhang|minimal overhang|flush eave|tight eave/.test(s)) X.eave = 'none'; else if (/deep overhang|deep eave/.test(s)) X.eave = 'deep';
+  if (/black[\s-](framed|frame)|black windows/.test(s)) X.frame = 'black';
+  if (/floor[\s-]to[\s-]ceiling/.test(s)) X.glaze = 'max'; else if (/large windows|big windows|tall windows|lots of glass/.test(s)) X.glaze = 'large';
+  if (/(full[\s-]view|glass|frosted)[^.]{0,40}garage door|garage door[^.]{0,40}(full[\s-]view|glass|frosted)/.test(s)) X.garage_door = 'glass';
+  if (/sidelight|glass (front |entry )?door/.test(s)) X.entry = 'glass';
+  if (/cylinder|up[\s/-]down/.test(s)) X.sconce = 'cylinder';
+  b.ext = X;
+  if (/silver|galvalume|light grey (standing|metal)|silver-grey (standing|metal)/.test(s) && /metal|standing[\s-]seam/.test(s)) b.roof = 'metal_silver'; else if (/black (metal|standing)/.test(s)) b.roof = 'metal_black';
+  if (/(grey|gray|silver)[^.]{0,30}(vertical|board|cedar|wood)|(vertical|board|cedar|wood)[^.]{0,30}(grey|gray|silver)/.test(s)) b.siding = 'cedar_grey';
+  if (/walk[\s-]?out/.test(s)) { b.walkout = true; b.basement = true; }
+  m = s.match(/(\d|one|two|three) (?:basement )?bed(?:room)?s? (?:in the )?basement|(\d|one|two|three) in the basement|(\d)\s*basement/); if (m) b.bbeds = num(m[1] || m[2] || m[3]); else { m = s.match(/\((\d) main floor, (\d) basement\)/); if (m) b.bbeds = +m[2]; }
+  if (/l[\s-]shaped|garage (wing|sticks|steps) (forward|toward)|forward garage|sticking forward/.test(s)) b.footprint = 'garage_fwd';
+  const F = []; if (/cathedral/.test(s)) F.push('cathedralLiving', 'vaultPrimary'); if (/media wall/.test(s)) F.push('mediaWall'); if (/skylight/.test(s)) F.push('skylights'); if (/glass wall|wall of glass|floor[\s-]to[\s-]ceiling windows/.test(s)) F.push('glassRear'); if (/hot tub|sauna|spa/.test(s)) F.push('yard:spa'); b.features = F;
+  if (/japandi|warm[\s-]minimal/.test(s)) b.roomStyle = 'japandi'; else if (/moody/.test(s)) b.roomStyle = 'moody';
   return b;
 }
 function briefPrompt(text) {
-  return `You fill in a house brief for a home-design app from a homeowner's description. Reply with ONLY one JSON object.
+  const mats = u => Object.entries(MATS).filter(([, m]) => m[6].includes(u)).map(([k, m]) => k + ' (' + m[0] + ')').join('; ');
+  return `You turn a homeowner's description into a house brief for a home-design app. The app generates the floor plans and the 3D house from your brief, so map every detail you can onto the options below, choosing the closest one when nothing matches exactly. Reply with ONLY one JSON object.
 DESCRIPTION: ${JSON.stringify(text)}
-SCHEMA: {"storeys":1 or 2 (1 = bungalow, bedrooms on the main floor, at most 3 bedrooms plus a basement guest room),"size":"compact"|"family"|"large","beds":2..5,"garage":0..3 cars,"front":"office"|"dining" (the extra main-floor room),"basement":true|false,"bx":[up to 3 of "theater","rec","gym","guest","workshop"],"bbath":true if a basement bathroom is wanted,"wine":true if a wine wall is wanted,"out":[any of "deck","patio","yard" (fenced yard, choose it for dogs or children),"garden"],"look":"coastal"|"classic"|"modern"|"scandi" (interior),"style":"harbour"|"farmhouse"|"cape"|"craftsman"|"modern" (exterior; leave siding and roof out unless the description names them),"siding":one of ${Object.entries(MATS).filter(([, m]) => m[6].includes('x')).map(([k]) => k).join(', ')},"roof":one of ${Object.entries(MATS).filter(([, m]) => m[6].includes('r')).map(([k]) => k).join(', ')},"tech":[keys],"name":short project name,"why":one friendly sentence explaining the main choices}
+SCHEMA:
+{"storeys":1|2 (1 = bungalow: up to 3 bedrooms on the main floor, more in the basement),
+"size":"compact"|"family"|"large" (main-floor footprint, roughly compact < 1500 sq ft, family 1500 to 2200, large > 2200),
+"beds":2..5 (total bedrooms in the house),
+"bbeds":0..3 (how many of those bedrooms are in the basement; bungalows only; omit if not stated),
+"garage":0..3 cars,"front":"office"|"dining" (the extra main-floor room),
+"basement":true|false,"walkout":true if the basement walks out to the yard (the lot slopes down to the back),
+"bx":[up to 3 of "theater","rec","gym","guest","workshop"] (basement rooms; basement bedrooms from bbeds take slots first, 3 slots in total),
+"bbath":true for a basement bathroom,"wine":true for a wine wall,
+"out":[any of "deck" (also a covered rear terrace),"patio","yard" (fenced),"garden"],
+"look":"coastal"|"classic"|"modern"|"scandi" (base interior palette),
+"roomStyle":one of ${Object.entries(ROOM_STYLES).map(([k, v]) => k + ' (' + v.n + ': ' + v.sub + ')').join('; ')} (whole-house interior style; omit if nothing fits),
+"style":one of ${Object.entries(STYLES).map(([k, v]) => k + ' (' + v[0] + ': ' + v[1] + ')').join('; ')} (exterior; pick the closest, then refine with ext, siding and roof),
+"siding":one of ${mats('x')},
+"roof":one of ${mats('r')},
+"ext":{"pitch":roof rise per 12 (e.g. 12 for 12/12),"shape":"gable"|"hip"|"shed"|"flat","eave":"none"|"tight"|"standard"|"deep" (roof overhang),"frame":"black"|"white"|"bronze"|"charcoal"|"wood"|"steel" (window frames),"glaze":"std"|"large"|"max" (window size; max = floor to ceiling),"garage_door":"panel"|"row"|"glass" (glass = full-view aluminium and frosted glass),"entry":"panel"|"glass" (glass = glass door with full-height sidelights and transom),"sconce":"lantern"|"cylinder" (wall lights),"door":"#hex front door colour","gdoor":"#hex garage door colour"},
+"footprint":"" or one of ${FOOTPRINTS.map(f => f[0] + ' (' + f[2] + ')').join('; ')},
+"features":[any of "glassRear" (big glass wall to the backyard),"cathedralLiving" (cathedral ceiling over the living and kitchen, bungalows),"vaultPrimary" (vaulted or cathedral primary bedroom),"skylights","mediaWall" (built-in TV wall),"bifoldDeck" (folding glass doors to the deck),"archEntry","mudLockers","kitchen:L"|"kitchen:U"|"kitchen:galley",${Object.entries(YARD_PACKS).map(([k, v]) => '"yard:' + k + '" (' + v[0] + ')').join(',')}],
+"tech":[keys],"name":short project name,"why":one or two friendly sentences on the main choices, and anything the app cannot do yet}
 TECH KEYS: ${TECH.map(t => t[0] + '=' + t[2]).join('; ')}
-Choose sensibly for anything the description leaves out: a family house in Nova Scotia, all-electric, efficient. Include heat_pump and erv unless told otherwise.`;
+Rules: an L-shaped house with the garage stepping toward the street is footprint garage_fwd. Weathered grey vertical boards are cedar_grey; light silver metal roofing is metal_silver. "Almost no overhangs" is eave none. Choose sensibly for anything the description leaves out: a family house in Nova Scotia, all-electric, efficient. Include heat_pump and erv unless told otherwise.`;
 }
 
 function generateHouse(brief) {
-  const b = cleanBrief(brief), look = LOOKS[b.look][2], keep = P || blankProject();
+  const b0 = cleanBrief(brief), Zk = (P && P.zoning) || blankProject().zoning, order = ['large', 'family', 'compact'];
+  let shrunk = ''; while (b0.size != 'compact' && briefSize(b0).total + .6 > b0.lotW - 2 * Zk.side) { shrunk = shrunk || b0.size; b0.size = order[order.indexOf(b0.size) + 1]; }
+  const b = b0, look = LOOKS[b.look][2], keep = P || blankProject();
   const N = blankProject(); N.name = keep.example || !keep.name ? 'My house' : keep.name; N.units = keep.units; N.zoning = keep.zoning; N.lv = keep.lv; N.seq = 0;
   N.ext = Object.assign(blankProject().ext, keep.ext || {}, { style: '', porch: 'none' });
   N.brief = b; N.tech = b.tech.slice(); N.lot = { x: 0, y: 0, w: b.lotW, d: b.lotD };
@@ -3588,7 +3676,8 @@ function generateHouse(brief) {
     R('M', 'primary', 'Primary bedroom', wx, y0, 4.2, B, { floor: look.bed, walls: look.bedw, items: [['bed_king', 'W', Math.min(.45, (B - 2.2) / B)], ['nightstand', 'W', Math.min(.45, (B - 2.2) / B), { dy: -1.3 }], ['dresser', 'N', .7], ...(B >= 6 ? [['armchair', 'S', .15]] : [])], wins: [['N', 1.2, 1.2, 1.4, .7], ['W', B - 1.2, 1.2, 1.4, .7]], doors: [['S', 3.5, .81]], feat: [...BF, 'Blackout blinds'] });
     R('M', 'ensuite', 'Ensuite', wx + 4.2, y0, 3, 3, { items: [['vanity_double', 'N', .42], ['shower', 'S', .84], ['toilet', 'S', .36]], wins: [['N', 2.3, .7, .9, 1.2, 'awning']], doors: [['W', 2.3, .71]], feat: ['Exhaust fan ducted outside, on timer', 'Curbless shower'] });
     R('M', 'closet', 'Walk-in closet', wx + 4.2, y0 + 3, 3, r2(B - 3), { floor: look.bed, items: [['wardrobe', 'E', .5, { w: Math.min(2.0, B - 3.3) }], ...(B - 3 >= 3 ? [['wardrobe', 'N', .62, { w: 1.6 }]] : [])], doors: [['W', (B - 3) / 2, .71]] });
-    R('M', 'bedroom', 'Bedroom 2', wx, ys, 3.6, 3.7, { floor: look.bed, walls: look.bedw, items: [['bed_queen', 'W', .55], ['dresser', 'S', .72], ['desk', 'E', .7]], wins: [['S', 1.6, 1.4, 1.4, .8], ['W', 1.2, .9, 1.4, .8]], doors: [['N', 2.9, .81]], feat: BF });
+    if (bedN >= 2) R('M', 'bedroom', 'Bedroom 2', wx, ys, 3.6, 3.7, { floor: look.bed, walls: look.bedw, items: [['bed_queen', 'W', .55], ['dresser', 'S', .72], ['desk', 'E', .7]], wins: [['S', 1.6, 1.4, 1.4, .8], ['W', 1.2, .9, 1.4, .8]], doors: [['N', 2.9, .81]], feat: BF });
+    else R('M', 'office', b.front == 'office' ? 'Den' : 'Study', wx, ys, 3.6, 3.7, { floor: look.floor, walls: look.accent, items: [['desk', 'E', .5], ['office_chair', 'E', .5, { dx: -.6 }], ['bookshelf', 'W', .5], ['armchair', 'S', .3]], wins: [['S', 1.6, 1.4, 1.4, .8], ['W', 1.2, .9, 1.4, .8]], doors: [['N', 2.9, .81]] });
     R('M', 'bathroom', 'Bathroom', wx + 3.6, ys, 2, 3.7, { items: [['tub', 'S', .5], ['vanity', 'E', .3, { w: .8 }], ['toilet', 'W', .45]], wins: [['S', 1.0, .6, .6, 1.5, 'awning']], doors: [['N', 1.0, .71]], feat: ['Exhaust fan ducted outside, on timer', 'Tempered or anti-scald valve'] });
     R('M', 'laundry', 'Laundry', wx + 5.6, ys, 1.6, 3.7, { items: [['washer', 'S', .28], ['dryer', 'S', .72], ['laundry_sink', 'W', .36]], wins: [['S', .8, .6, .6, 1.5, 'awning']], doors: [['N', .8, .81]], feat: ['Drain pan under washer', 'Floor drain'] });
   }
@@ -3596,7 +3685,9 @@ function generateHouse(brief) {
   if (b.basement) {
     const slot = { A: null, B: null, C: null };
     if (want.includes('theater')) slot.A = 'theater'; if (want.includes('rec')) slot.B = 'rec';
-    for (const k of want) { if (Object.values(slot).includes(k)) continue; const f = ['C', 'B', 'A'].find(s => !slot[s]); if (f) slot[f] = k; }
+    for (const k of want) { if (k != 'guest' && Object.values(slot).includes(k)) continue; if (k == 'guest' && Object.values(slot).filter(v => v == 'guest').length >= want.filter(v => v == 'guest').length) continue; const f = ['C', 'B', 'A'].find(s => !slot[s]); if (f) slot[f] = k; }
+    let gi = 0;
+    if (want.filter(v => v == 'guest').length > 1) b.bbath = true;
     const cy = b.bbath ? yb + 1.8 : yb, cd = b.bbath ? 3.0 : 4.8, geo = { A: [x0, y0, hw, B], B: [x0 + hw, y0, 5.5, B], C: [x0, cy, a, cd] };
     const door = { A: ['S', hw - .5, .86], B: ['S', .75, 1.2, 'opening'], C: ['E', b.bbath ? 1.0 : 1.2, .81] };
     const bw = { A: [['N', hw / 2, 1.0, .5, 1.75, 'slider'], ['W', B / 2, 1.0, .5, 1.75, 'slider']], B: [['N', 1.2, 1.0, .5, 1.75, 'slider'], ['E', Math.min(3, B / 2), 1.0, .5, 1.75, 'slider']], C: [['S', a / 2, 1.2, .5, 1.75, 'slider'], ['W', cd / 2, 1.0, .5, 1.75, 'slider']] };
@@ -3605,7 +3696,7 @@ function generateHouse(brief) {
       if (k == 'theater') { const rw = Math.min(4.3, w - 1.15), row = rw >= 3.7 ? 'theater_row4' : 'theater_row'; Object.assign(o, { wins: [], items: s == 'A' ? [['proj_screen', 'N', .5, { w: r2(Math.min(3.2, w - 1.4, (d - 2.9) / .9)) }], ['speaker', 'N', .1], ['speaker', 'N', .9], ['subwoofer', 'N', .21], [row, 'C', (d - 2.75) / d, { r: 2, dx: Math.min(0, (rw - w) / 2 + .1) }], ['riser', 'S', (.05 + rw / 2) / w, { w: rw }], [row, 'S', (.05 + rw / 2) / w, { z: .3, dy: -.45 }], ['projector', 'C', .62], ['acoustic_panel', 'W', .42], ['acoustic_panel', 'E', .4], ['sconce', 'W', .8], ['sconce', 'E', .78]] : undefined, feat: ['Dedicated 20 A audio circuit', 'Conduit from rack to projector', 'In-wall speaker wiring, 7.2.4 Atmos', 'Mineral wool sound insulation', 'Double drywall on resilient channel', 'LED step lighting on riser', 'Solid-core door with acoustic seals'] }); R('B', 'theater', 'Home theatre', x, y, w, d, o); }
       else if (k == 'rec') { Object.assign(o, { ctr: 'granite', items: s == 'B' ? [['back_bar', 'N', .72], ['bar', 'N', .72, { dy: 1.0 }], ['stools', 'N', .72, { dy: 1.72, r: 2 }], ['pool_table', 'C', Math.max(3.75, d * .68) / d, { dx: -.5 }], ...(b.wine ? [['wine_rack', 'W', .16]] : [])] : undefined, feat: ['Bar sink with drain', 'Under-counter beverage fridge'] }); R('B', 'rec', 'Rec room and bar', x, y, w, d, o); }
       else if (k == 'gym') { Object.assign(o, { items: s == 'C' && !b.bbath ? [['power_rack', 'N', .28], ['dumbbells', 'E', .72], ['treadmill', 'S', .25], ['yoga_mat', 'C', .6, { dx: .5 }], ['gym_mirror', 'W', .5]] : [['treadmill', 'S', .25], ['dumbbells', 'W', .5], ['yoga_mat', 'C', .5, { dx: .6 }]], feat: ['Rubber flooring, 9 mm', 'Ductless mini-split head'] }); R('B', 'gym', 'Home gym', x, y, w, d, o); }
-      else if (k == 'guest') { const ww = s == 'C' ? 'S' : 'N', len = w; Object.assign(o, { floor: look.bed, walls: look.bedw, items: [['bed_queen', s == 'C' ? 'W' : s == 'A' ? 'W' : 'E', .5], ['dresser', s == 'C' ? 'N' : 'S', s == 'B' ? .75 : .35]], wins: [[ww, len / 2, .9, 1.0, 1.1, 'casement']], feat: [...BF, 'Window well, 760 mm clear, with drain'] }); R('B', 'bedroom', 'Guest bedroom', x, y, w, d, o); }
+      else if (k == 'guest') { const ww = s == 'C' ? 'S' : 'N', len = w; Object.assign(o, { floor: look.bed, walls: look.bedw, items: [['bed_queen', s == 'C' ? 'W' : s == 'A' ? 'W' : 'E', .5], ['dresser', s == 'C' ? 'N' : 'S', s == 'B' ? .75 : .35]], wins: [[ww, len / 2, .9, 1.0, 1.1, 'casement']], feat: [...BF, 'Window well, 760 mm clear, with drain'] }); R('B', 'bedroom', want.filter(v => v == 'guest').length > 1 ? 'Bedroom ' + (bedN + 1 + gi++) : 'Guest bedroom', x, y, w, d, o); }
       else if (k == 'workshop') { Object.assign(o, { items: [['workbench', 'N', .35], ['tool_chest', 'N', .85], ['shelving', 'W', .6]], feat: ['Dedicated 20 A circuit'] }); R('B', 'workshop', 'Workshop', x, y, w, d, o); }
       else { Object.assign(o, { items: [['shelving', 'N', .25], ['shelving', 'N', .7], ...(b.wine && !want.includes('rec') ? [['wine_rack', 'W', .5]] : [])] }); R('B', 'storage', 'Storage', x, y, w, d, o); }
     }
@@ -3624,7 +3715,14 @@ function generateHouse(brief) {
   if (b.out.includes('garden')) { R('S', 'garden', 'Front garden', x0 + .3, y1 + .3, Math.min(3.9, a - .5), 1.4, { items: [['planter', 'C', .5, { dx: -.8 }], ['plant', 'C', .5, { dx: 1.1 }]] }); if (wing) R('S', 'garden', 'Garden bed', left + .4, y1 + .3, 5, 1.4, { items: [['planter', 'C', .5], ['tree', 'C', .5, { dx: 1.9, w: 1.6 }]] }); }
   if (b.style) applyStyle(b.style); else setPorch(P.ext.porch = 'none');
   if (b.siding) P.ext.siding = b.siding; if (b.roof) P.ext.roof = b.roof;
+  const X = b.ext || {}; for (const k of ['pitch', 'shape', 'eave', 'frame', 'gglass', 'gwin', 'sconce', 'door', 'gdoor']) if (X[k] != null) P.ext[k] = X[k];
+  if (b.walkout) P.site = Object.assign({}, P.site || {}, { walkout: true, fall: Math.max(2.4, (P.site || {}).fall || 0), toward: 'N' });
+  const feats = [...(b.footprint ? ['fp:' + b.footprint] : []), ...(b.roomStyle ? [b.roomStyle] : []), ...b.features];
+  if (feats.length && typeof finishPlan == 'function') finishPlan(feats);
+  const gz = X.glaze || (b.style && STYLES[b.style] && STYLES[b.style][2].glaze) || ''; if (gz && gz != 'std') applyGlaze(gz);
+  const en = X.entry || (b.style && STYLES[b.style] && STYLES[b.style][2].entry) || ''; if (en) setEntry(en);
   applyTech(); resolveOpenings(); unblockAll(true);
+  if (shrunk) P.brief.shrunk = shrunk;
   return P;
 }
 // add the equipment and spec lines that the chosen technology implies (never removes anything)
@@ -3663,7 +3761,8 @@ Object.assign(STYLES, {
   minimal: ['Minimal flat roof', 'White panel box, flat roof with parapet, warm wood door', { siding: 'panel_white', roof: 'metal_char', pitch: .25, shape: 'flat', frame: 'matte_black', grilles: false, shutters: '', accent: '', gable: '', dormers: 0, door: '#8a6240', gdoor: '#8a6240', gwin: false, porch: 'none' }, ['#ecebe6', '#8a6240', '#232427']],
   neochamp: ['Néo-champêtre', 'White board and batten, steep black metal roof, wide porch', { siding: 'batten_white', roof: 'metal_black', pitch: .833, shape: 'gable', frame: 'matte_black', grilles: false, shutters: '', accent: '', gable: '', dormers: 0, door: '#1c1c1f', gdoor: '#26282b', gwin: true, porch: 'full' }, ['#ecebe6', '#2a2c2f', '#c8a273']],
   english: ['English heritage', 'Light brick, dark vertical wood in the gables, steep roof, arched entry', { siding: 'brick_white', roof: 'shingle_black', pitch: 1, shape: 'gable', frame: 'matte_black', grilles: true, shutters: '', accent: '', gable: 'charred', dormers: 0, door: '#2a2c2f', gdoor: '#2a2c2f', gwin: true, porch: 'portico' }, ['#e8e5de', '#2a2522', '#2a2b2e']],
-  nordic: ['Scandinavian', 'Charred cedar all over, steep black roof, no ornament', { siding: 'charred', roof: 'metal_black', pitch: .833, shape: 'gable', frame: 'matte_black', grilles: false, shutters: '', accent: '', gable: '', dormers: 0, door: '#c8843c', gdoor: '#26282b', gwin: false, porch: 'none' }, ['#2a2522', '#c8843c', '#2a2c2f']],
+  newbarn: ['Nordic new barn', 'Weathered silver-grey boards, steep silver metal roof, no overhangs, black frames, glass garage door', { siding: 'cedar_grey', roof: 'metal_silver', pitch: 1, shape: 'gable', frame: 'matte_black', grilles: false, shutters: '', accent: '', gable: '', dormers: 0, door: '#2a2c2f', gdoor: '#2a2c2f', gwin: false, porch: 'none', eave: .2, gglass: true, entry: 'glass', sconce: 'cylinder', glaze: 'large' }, ['#9b9890', '#a7acb1', '#18181a']],
+  nordic: ['Scandinavian', 'Charred cedar all over, steep black roof, no ornament', { siding: 'charred', roof: 'metal_black', pitch: .833, shape: 'gable', frame: 'matte_black', grilles: false, shutters: '', accent: '', gable: '', dormers: 0, door: '#c8843c', gdoor: '#26282b', gwin: false, porch: 'none', eave: .2, sconce: 'cylinder' }, ['#2a2522', '#c8843c', '#2a2c2f']],
   chalet: ['Mountain chalet', 'Vertical cedar, fieldstone base, steep standing-seam roof', { siding: 'cedar_vert', roof: 'metal_char', pitch: 1, shape: 'gable', frame: 'bronze', grilles: false, shutters: '', accent: 'fieldstone', gable: 'cedar_vert', dormers: 0, door: '#5c3a24', gdoor: '#6b4a33', gwin: true, porch: 'full' }, ['#b07c4f', '#8c8576', '#45484d']],
   midmod: ['Mid-century modern', 'Cedar and brown brick, low-slung roof, orange door', { siding: 'cedar_vert', roof: 'shingle_wood', pitch: .25, shape: 'gable', frame: 'bronze', grilles: false, shutters: '', accent: 'brick_brown', gable: 'cedar_vert', dormers: 0, door: '#d98e4a', gdoor: '#6b4a33', gwin: true, porch: 'none' }, ['#b07c4f', '#6b4a3a', '#d98e4a']],
   prairie: ['Prairie', 'Cream siding over brick, low hipped roof, deep eaves', { siding: 'lap_cream', roof: 'shingle_brown', pitch: .333, shape: 'hip', frame: 'bronze', grilles: false, shutters: '', accent: 'brick_brown', gable: '', dormers: 0, door: '#6b4a33', gdoor: '#6b4a33', gwin: true, porch: 'portico' }, ['#d4c4a5', '#6b4a3a', '#5e4a3a']],
@@ -3772,7 +3871,7 @@ function finishPlan(feats) { // the touches that make each plan more than a gene
       if (ROOM_STYLES[k]) { for (const r of IN) if (!r.part && !T(r).unfin && r.type != 'garage') applyRoomStyle(r, k); continue; }
       const [op, arg] = k.split(':');
       if (op == 'cathedralLiving' && bung && (P.ext.pitch >= .45 || ['flat', 'shed'].includes(P.ext.shape))) { const L = f('living'); if (L) L.ct = 'cathedral'; const K = f('kitchen'); if (K) K.ct = 'vaulted'; }
-      else if (op == 'vaultPrimary') { const R = indoor('U').find(r => r.type == 'primary'); if (R) R.ct = 'vaulted'; }
+      else if (op == 'vaultPrimary') { const R = (bung ? indoor('M') : indoor('U')).find(r => r.type == 'primary'); if (R) R.ct = bung && P.ext.pitch >= .45 ? 'cathedral' : 'vaulted'; }
       else if (op == 'glassRear') { const L = f('living'); if (L && !L.doors.some(d => d.wall == 'N' && onExt(L, d))) { const ws = L.wins.filter(w => w.wall == 'N' && onExt(L, w)); if (ws.length) { const w = ws.sort((a, b) => b.w - a.w)[0]; Object.assign(w, { style: 'glasswall', w: r2(Math.min(L.w - 1, 4.2)), h: 2.2, sill: .05, p: r2(L.w / 2) }); } else if (extIv(L, 'N').length) L.wins.push({ wall: 'N', p: r2(L.w / 2), w: r2(Math.min(L.w - 1, 4.2)), h: 2.2, sill: .05, style: 'glasswall' }); fixOpenings(L); } }
       else if (op == 'bifoldDeck') { let done = 0; for (const r of IN) for (const d of r.doors) if (!done && r.lv == 'M' && d.wall == 'N' && (d.kind == 'slider' || d.kind == 'exterior') && onExt(r, d) && ['kitchen', 'living', 'dining'].includes(r.type)) { const len = r.w, w = r2(Math.min(2.8, len - 1.2)); d.kind = 'bifold'; d.w = w; d.p = r2(clamp(d.p, w / 2 + .2, len - w / 2 - .2)); const [a, b] = openSpan(r, d); r.wins = r.wins.filter(q => q.wall != 'N' || (s => s[1] < a - .1 || s[0] > b + .1)(openSpan(r, q))); fixOpenings(r); done = 1; } }
       else if (op == 'skylights') { const top = bung ? indoor('M') : indoor('U'); for (const r of top) if (['hall', 'bathroom', 'ensuite', 'kitchen'].includes(r.type) && !(r.sky || []).length) { r.sky = [{ x: r2(r.w / 2), y: r2(r.d / 2), w: .8, d: 1.2 }]; if (skyBlocked(r)) delete r.sky; } }
@@ -5096,9 +5195,11 @@ function buildRoom(g, r, ops, showCeil, lights) {
       if (o.r !== r || o.join) continue;
       const m = (o.a + o.b) / 2, isExt = ext.some(v => m > v[0] && m < v[1]), ca = e.c - inw * (isExt ? .16 : .06), cb = e.c + inw * .06, f = .04;
       if (o.o) trimOpening(g, e, o, inw, isExt, r, t);
-      if (isExt && o.door && o.o && o.o.kind != 'garage' && r.lv != 'B' && o.y0 < 1.5) { // porch light beside the door
-        const sa = o.b + .28, so = e.c - inw * .19, sy = o.y0 + 1.95, sp = e.h ? [sa, sy, so - inw * .07] : [so - inw * .07, sy, sa], lm = mat('matte_black');
-        if (e.h) { g.box(sa - .08, sy - .16, so, sa + .08, sy + .14, so - inw * .1, lm); g.box(sa - .055, sy - .12, so - inw * .02, sa + .055, sy + .08, so - inw * .09, mat('glow_warm')); } else { g.box(so, sy - .16, sa - .08, so - inw * .1, sy + .14, sa + .08, lm); g.box(so - inw * .02, sy - .12, sa - .055, so - inw * .09, sy + .08, sa + .055, mat('glow_warm')); }
+      if (isExt && o.door && o.o && r.lv != 'B' && o.y0 < 1.5 && (o.o.kind != 'garage' || P.ext.sconce == 'cylinder')) for (const sa of o.o.kind == 'garage' ? [o.a - .35, o.b + .35] : [o.b + .28 + (o.o.tr && P.ext.entry == 'glass' ? .05 : 0)]) { // wall lights beside the doors
+        const so = e.c - inw * .19, sy = o.y0 + (o.o.kind == 'garage' ? 2.3 : 1.95), sp = e.h ? [sa, sy, so - inw * .07] : [so - inw * .07, sy, sa], lm = mat('matte_black'), cyl = P.ext.sconce == 'cylinder';
+        const L1 = (u0, u1, y0, y1, c0, c1, mm) => e.h ? g.box(sa + u0, y0, so - inw * c0, sa + u1, y1, so - inw * c1, mm) : g.box(so - inw * c0, y0, sa + u0, so - inw * c1, y1, sa + u1, mm);
+        if (cyl) { L1(-.05, .05, sy - .17, sy + .17, 0, .11, lm); L1(-.035, .035, sy + .17, sy + .175, .02, .09, mat('glow_warm')); L1(-.035, .035, sy - .175, sy - .17, .02, .09, mat('glow_warm')); }
+        else { L1(-.08, .08, sy - .16, sy + .14, 0, .1, lm); L1(-.055, .055, sy - .12, sy + .08, .02, .09, mat('glow_warm')); }
         const PL = { p: sp, c: [1.4, 1.0, .6], a: [sp[0] - 8, sp[1] - 4, sp[2] - 8], b: [sp[0] + 8, sp[1] + 2, sp[2] + 8], d: -1, out: 1 }; lights.push(PL); lights.fine.push({ p: sp, c: [.35, .25, .15], a: PL.a, b: PL.b }); }
       if (isExt && o.o && (!o.door || ['slider', 'french', 'double', 'bifold'].includes(o.o.kind))) { const yc = (o.y0 + o.y1) / 2; WL.push({ p: e.h ? [m, yc, e.c + inw * .2] : [e.c + inw * .2, yc, m], n: e.h ? [0, 0, inw] : [inw, 0, 0], s: (o.b - o.a) * (o.y1 - o.y0) * (r.lv == 'B' ? .5 : 1) }); }
       buildOpening(g, e, o, inw, isExt, r, ca, cb, wm, gl, trim);
@@ -5198,18 +5299,19 @@ function buildRoofs(g) {
     if (!classicRoof()) { buildRoofAlt(g, r); continue; }
     const G = roofGeom(r), { e, p, x, U0, U1, v0, v1, vm, ye, yr, ua, ub } = G, nl = Math.hypot(1, p);
     const rm = mat(P.ext.roof, null, !x), sf = mat('soffit'), sd = mat(P.ext.gable || P.ext.siding), wall = mat(P.ext.siding), tr = mat('trim');
+    const thin = (+P.ext.eave || .45) < .3, fh = thin ? .06 : .18, ftm = thin ? mat(P.ext.roof, null, !x) : tr;
     const pt = (u, v, y) => x ? [u, y, v] : [v, y, u], nrm = s => x ? [0, 1 / nl, s * p / nl] : [s * p / nl, 1 / nl, 0], nrmU = s => x ? [s * p / nl, 1 / nl, 0] : [0, 1 / nl, s * p / nl];
     for (const s of [-1, 1]) {
       const ve = s < 0 ? v0 - e : v1 + e, n = nrm(s);
       g.quad(pt(U0, ve, ye), pt(U1, ve, ye), pt(ub, vm, yr), pt(ua, vm, yr), n, rm);
       g.quad(pt(U0, ve, ye - .04), pt(U1, ve, ye - .04), pt(ub, vm, yr - .04), pt(ua, vm, yr - .04), n.map(v => -v), sf);
-      g.quad(pt(U0, ve, ye - .18), pt(U1, ve, ye - .18), pt(U1, ve, ye + .01), pt(U0, ve, ye + .01), x ? [0, 0, s] : [s, 0, 0], tr);
+      g.quad(pt(U0, ve, ye - fh), pt(U1, ve, ye - fh), pt(U1, ve, ye + .01), pt(U0, ve, ye + .01), x ? [0, 0, s] : [s, 0, 0], ftm);
     }
     for (const [u, hip, ab, s, ur] of [[U0, G.hipA, G.abA, -1, ua], [U1, G.hipB, G.abB, 1, ub]]) {
       if (hip) { const n = nrmU(s); g.tri(pt(u, v0 - e, ye), pt(u, v1 + e, ye), pt(ur, vm, yr), n, mat(P.ext.roof, null, x)); g.tri(pt(u, v0 - e, ye - .04), pt(u, v1 + e, ye - .04), pt(ur, vm, yr - .04), n.map(v => -v), sf); g.quad(pt(u, v0 - e, ye - .18), pt(u, v1 + e, ye - .18), pt(u, v1 + e, ye + .01), pt(u, v0 - e, ye + .01), x ? [s, 0, 0] : [0, 0, s], tr); }
       else if (!ab) { const wu = (x ? (s < 0 ? r.x0 : r.x1) : (s < 0 ? r.y0 : r.y1)) + s * .16; g.tri(pt(wu, v0 - .16, r.base), pt(wu, v1 + .16, r.base), pt(wu, vm, yr - .04), x ? [s, 0, 0] : [0, 0, s], sd); }
     }
-    buildGutters(g, r, G, rf, geoms);
+    if (!thin) buildGutters(g, r, G, rf, geoms);
     if (ub - ua > .3) { const rc = mat(P.ext.roof, null, !x), a = pt(ua, vm - .14, yr - .03), b2 = pt(ub, vm + .14, yr + .045); g.box(a[0], a[1], a[2], b2[0], b2[1], b2[2], rc); }
     for (const arr of sol) if (arr.r === r) { const s = x ? 1 : -1, n = nrm(s), pm = mat('solar'), P4 = (u, h) => { const q = pt(u, vm + s * h, yr - h * p); return [q[0] + n[0] * .07, q[1] + n[1] * .07, q[2] + n[2] * .07]; }; for (const q of arr.panels) g.quad(P4(q.u, q.h0), P4(q.u + 1, q.h0), P4(q.u + 1, q.h1), P4(q.u, q.h1), n, pm); }
     if (P.ext.cupola && big && r.x0 == big.x0 && r.y0 == big.y0 && r.lv == big.lv) buildCupola(g, r);
@@ -5670,6 +5772,14 @@ function buildOpening(g, e, o, inw, isExt, r, ca, cb, wm, gl, trim) {
   if (k == 'garage') {
     const gm = matTint('garage_door', P.ext.gdoor || '#e9e8e3'), out = -inw, gc = e.c - inw * .1, face = gc + out * .03;
     B(o.a, o.a + f, ca, cb, o.y0, o.y1, fr); B(o.b - f, o.b, ca, cb, o.y0, o.y1, fr); B(o.a, o.b, ca, cb, o.y1 - f, o.y1, fr);
+    if (P.ext.gglass) { // full-view: an aluminium grid with frosted panels
+      const am = mat(P.ext.frame == 'trim' ? 'steel' : P.ext.frame || 'matte_black'), fz = mat('glass_frost'), u0 = o.a + f, u1 = o.b - f, y0 = o.y0, y1 = o.y1 - f, nc = Math.max(3, Math.round((u1 - u0) / .62)), nr = 4, cw = (u1 - u0) / nc, rh = (y1 - y0) / nr;
+      B(u0, u1, gc - .01, gc + .01, y0, y1, fz);
+      for (let i = 0; i <= nc; i++) { const u = u0 + i * cw; B(u - .03, u + .03, gc - .035, gc + .035, y0, y1, am); }
+      for (let j = 0; j <= nr; j++) { const y = y0 + j * rh; B(u0, u1, gc - .035, gc + .035, Math.max(y0, y - (j ? .035 : 0)), Math.min(y1, y + (j < nr ? .035 : 0)), am); }
+      B(m - .12, m + .12, face - out * .005, face + out * .025, o.y0 + .16, o.y0 + .19, hw);
+      return;
+    }
     B(o.a + f, o.b - f, gc - .03, gc + .03, o.y0, o.y1 - f, gm);
     const nS = 4, sh = (o.y1 - f - o.y0) / nS; for (let i = 1; i < nS; i++) B(o.a + f, o.b - f, face, face + out * .008, o.y0 + i * sh - .012, o.y0 + i * sh + .012, matTint('garage_door', '#b9b8b2'));
     B(m - .1, m + .1, face, face + out * .03, o.y0 + .14, o.y0 + .17, hw);
@@ -5696,6 +5806,15 @@ function buildOpening(g, e, o, inw, isExt, r, ca, cb, wm, gl, trim) {
   };
   if (k == 'interior') swungLeaf(o.a + jt, o.o.w - 2 * jt, trim, false);
   else if (k == 'double' || k == 'french') { const len = (o.o.w - 2 * jt) / 2; swungLeaf(o.a + jt, len, k == 'french' ? fr : dc, k == 'french'); swungLeaf(o.b - jt - .04, len, k == 'french' ? fr : dc, k == 'french'); if (isExt) stoop(g, e, o, inw); }
+  else if (k == 'exterior' && P.ext.entry == 'glass' && o.o.w >= 1.3) { // glass door between full-height sidelights
+    const am = mat(P.ext.frame == 'trim' ? 'matte_black' : P.ext.frame || 'matte_black'), dw = .95, m0 = (o.a + o.b) / 2, d0 = m0 - dw / 2, d1 = m0 + dw / 2, y0 = o.y0 + .01, y1 = top;
+    sash(o.a + jt, d0 - .02, y0, y1, pc, .05, .025, am); sash(d1 + .02, o.b - jt, y0, y1, pc, .05, .025, am);
+    B(d0 - .03, d0 + .01, pc - .035, pc + .035, o.y0, y1, am); B(d1 - .01, d1 + .03, pc - .035, pc + .035, o.y0, y1, am);
+    sash(d0 + .01, d1 - .01, y0, y1 - .005, pc, .085, .025, am);
+    for (const s of [-1, 1]) { const c = pc + s * .025; B(d1 - .11, d1 - .085, c, c + s * .05, o.y0 + .55, o.y0 + 1.75, hw); B(d1 - .11, d1 - .085, c, c + s * .012, o.y0 + .6, o.y0 + .64, hw); B(d1 - .11, d1 - .085, c, c + s * .012, o.y0 + 1.66, o.y0 + 1.7, hw); }
+    B(o.a, o.b, cA, ci, o.y0 - .005, o.y0 + .015, mat('steel'));
+    stoop(g, e, o, inw);
+  }
   else if (k == 'exterior') {
     const u0 = o.a + jt, u1 = o.b - jt, y0 = o.y0 + .01, y1 = top - .005, lc = pc, d = .022;
     B(u0, u1, lc - d, lc + d, y0, y1, dc);
@@ -6460,12 +6579,12 @@ function renderBrief() {
     const names = k => TECH.find(t => t[0] == k)[2], bp = bsmtPlan(b), bedUp = bp.bedN;
     H.push(`<h2>Ready to build</h2><div class="card"><ul class="sum">
     <li><b>${b.storeys == 2 ? 'Two-storey' : 'Bungalow'}, ${SIZES[b.size] && b.size}</b>: about ${fA(z.main + z.upper)} above ground${b.basement ? ', plus ' + fA(z.bsmt) + ' of basement' : ''}</li>
-    <li><b>${bedUp} bedroom${bedUp > 1 ? 's' : ''}</b>${bp.guest ? ' and a basement guest bedroom' : ''}, ${b.front == 'dining' && !(b.storeys == 1 && bedUp >= 3) ? 'dining room' : b.storeys == 1 && bedUp >= 3 ? 'no separate office' : 'home office'}</li>
+    <li><b>${bedUp} bedroom${bedUp > 1 ? 's' : ''}</b>${bp.gN > 1 ? ` and ${bp.gN} basement bedrooms` : bp.guest ? ' and a basement guest bedroom' : ''}, ${b.front == 'dining' && !(b.storeys == 1 && bedUp >= 3) ? 'dining room' : b.storeys == 1 && bedUp >= 3 ? 'no separate office' : 'home office'}</li>
     <li><b>Garage</b>: ${b.garage ? b.garage + (b.garage > 1 ? ' cars' : ' car') : 'none'}</li>
     <li><b>Basement</b>: ${b.basement ? ([...bp.want.map(k => ({ theater: 'home theatre', rec: 'rec room and bar', gym: 'gym', workshop: 'workshop', guest: 'guest bedroom' }[k])), b.bbath && 'bathroom', b.wine && 'wine wall'].filter(Boolean).join(', ') || 'storage') : 'none'}</li>
     <li><b>Outside</b>: ${[...b.out.map(k => ({ yard: 'fenced yard', deck: 'deck', patio: 'patio', garden: 'front garden' }[k])), 'driveway', 'front walk'].join(', ')}; ${b.style ? STYLES[b.style][0].toLowerCase() + ' style' : 'your own colours'}</li>
     <li><b>Inside</b>: ${LOOKS[b.look][0].toLowerCase()}</li>
-    <li><b>Technology</b>: ${b.tech.length ? b.tech.map(names).join(', ').toLowerCase() : 'code minimum'}</li></ul></div>${fitNote(b)}
+    <li><b>Technology</b>: ${b.tech.length ? b.tech.map(names).join(', ').toLowerCase() : 'code minimum'}</li></ul></div>${briefExtras(b)}${fitNote(b)}
     <p class="muted">${P.rooms.length && !P.example ? 'Building replaces the plan you have now. Undo at the top brings it back.' : 'The whole house is laid out in a few seconds, with stairs, doors, windows and furniture, and checked against the building code.'}</p>
     <button class="btn p big" data-a="build">Build my house</button>`);
   }
@@ -6499,7 +6618,7 @@ function buildHouse() {
   save(); recheck(); renderHeader(); goStep('layout');
   const e = CHK.filter(c => c.sev == 'err').length;
   const E = estimate();
-  toast(`Your house is laid out: ${indoor().length} rooms, ${e ? e + ' check item' + (e > 1 ? 's' : '') + ' to fix' : 'all checks pass'}, roughly ${fK(E.lo)} to ${fK(E.hi)}. Tap 3D to see it.`, 6000);
+  toast(`${P.brief.shrunk ? `A ${P.brief.shrunk} house is wider than the lot allows, so it was laid out one size smaller. Widen the lot in the Brief to get it back. ` : ''}Your house is laid out: ${indoor().length} rooms, ${e ? e + ' check item' + (e > 1 ? 's' : '') + ' to fix' : 'all checks pass'}, roughly ${fK(E.lo)} to ${fK(E.hi)}. Tap 3D to see it.`, 6000);
 }
 function initMic(d) {
   CAP.dict = d || null; if (!d) return;
@@ -6507,6 +6626,21 @@ function initMic(d) {
     d.onFinal(({ text }) => { const el = micFor && $(micFor); if (!el) return; el.value = el.value ? el.value + text : text.replace(/^\s+/, ''); el.dispatchEvent(new Event('input', { bubbles: true })); });
     d.onState(({ state }) => { for (const b of document.querySelectorAll('[data-a="mic"]')) b.textContent = state == 'idle' ? 'Speak' : 'Stop listening'; });
   } catch (e) { CAP.dict = null; }
+}
+
+function briefExtras(b) { // details read from a description that the questions do not ask about
+  const X = b.ext || {}, L = [];
+  if (b.footprint) L.push((FOOTPRINTS.find(f => f[0] == b.footprint) || [, b.footprint])[1].toLowerCase() + ' footprint');
+  if (b.walkout) L.push('walk-out basement, lot falling to the back');
+  if (X.pitch) L.push(Math.round(X.pitch * 12) + '/12 roof'); if (X.shape) L.push(X.shape + ' roof'); if (X.eave) L.push({ .2: 'almost no overhang', .3: 'tight overhang', .45: 'standard overhang', .7: 'deep overhang' }[X.eave] || 'custom overhang');
+  if (b.siding) L.push(MATS[b.siding][0].toLowerCase()); if (b.roof) L.push(MATS[b.roof][0].toLowerCase() + ' roof');
+  if (X.frame) L.push((X.frame == 'matte_black' ? 'black' : X.frame == 'trim' ? 'white' : X.frame) + ' window frames'); if (X.glaze && X.glaze != 'std') L.push(X.glaze == 'max' ? 'floor-to-ceiling windows' : 'larger windows');
+  if (X.gglass) L.push('full-view glass garage door'); if (X.entry == 'glass') L.push('glass entry with sidelights and transom'); if (X.sconce == 'cylinder') L.push('up-and-down cylinder wall lights');
+  const FN = { glassRear: 'glass wall to the backyard', cathedralLiving: 'cathedral ceiling over the great room', vaultPrimary: 'vaulted primary bedroom', skylights: 'skylights', mediaWall: 'built-in media wall', bifoldDeck: 'folding glass doors to the deck', archEntry: 'arched entry', mudLockers: 'mudroom lockers' };
+  for (const f of b.features || []) L.push(FN[f] || (/^kitchen:/.test(f) ? f.slice(8) + '-shaped kitchen' : /^yard:/.test(f) && YARD_PACKS[f.slice(5)] ? YARD_PACKS[f.slice(5)][0].toLowerCase() + ' yard' : f));
+  if (b.roomStyle) L.push(ROOM_STYLES[b.roomStyle].n.toLowerCase() + ' interiors');
+  if (!L.length) return '';
+  return `<div class="card" style="margin-top:10px"><b>Also from your description</b><p class="muted" style="margin:4px 0 8px">${esc(L.join(' · '))}</p><div class="row"><button class="btn" data-a="bextclear">Ignore these</button></div></div>`;
 }
 
 // ---------- Step guide: a short to-do list per step that ticks itself, and a searchable list of every tool ----------
@@ -6952,9 +7086,13 @@ const A = {
   xopen: () => { G.mode = 'ext'; G.camKey = null; go('view3d'); UI.xtab = UI.xtab || 'style'; openSheet('ext'); },
   xtab: t => { UI.xtab = t.dataset.v; renderSheet(); },
   xstyle: t => { applyStyle(t.dataset.v); commit(); renderSheet(); if (UI.view == 'view3d') show3D(); },
-  xset: t => { const k = t.dataset.k, v = t.dataset.v; if (k == 'porch') { P.ext.porch = v; if (!setPorch(v)) toast('Add an exterior door on a south wall first; the porch attaches to it.', 4200); } else P.ext[k] = k == 'pitch' || k == 'dormers' ? +v : k == 'grilles' || k == 'gwin' || k == 'cupola' ? v == '1' : v; if (!['door', 'gdoor', 'gwin', 'cupola'].includes(k)) P.ext.style = ''; commit(); renderSheet(); if (UI.view == 'view3d') show3D(); },
+  xset: t => { const k = t.dataset.k, v = t.dataset.v;
+    if (k == 'glaze') { const n = applyGlaze(v); commit(); renderSheet(); if (UI.view == 'view3d') show3D(); toast(v == 'std' ? 'New windows will use standard sizes. Existing windows keep their size; change one in its room.' : `Resized ${n} windows. Undo puts them back.`, 4200); return; }
+    if (k == 'entry') { if (!setEntry(v)) toast('Add an exterior door first.'); commit(); renderSheet(); if (UI.view == 'view3d') show3D(); return; }
+    if (k == 'gstyle') { P.ext.gglass = v == 'glass'; P.ext.gwin = v == 'row'; commit(); renderSheet(); if (UI.view == 'view3d') show3D(); return; }
+    if (k == 'porch') { P.ext.porch = v; if (!setPorch(v)) toast('Add an exterior door on a south wall first; the porch attaches to it.', 4200); } else P.ext[k] = k == 'pitch' || k == 'dormers' || k == 'eave' ? +v : k == 'grilles' || k == 'gwin' || k == 'cupola' ? v == '1' : v; if (!['door', 'gdoor', 'gwin', 'cupola', 'sconce'].includes(k)) P.ext.style = ''; commit(); renderSheet(); if (UI.view == 'view3d') show3D(); },
   see3d: () => { G.mode = 'ext'; G.camKey = null; go('view3d'); },
-  bset: t => setBrief(t.dataset.k, t.dataset.v), btog: t => setBrief(t.dataset.k, t.dataset.v, true), bfill: () => fillBrief(), build: () => buildHouse(),
+  bset: t => setBrief(t.dataset.k, t.dataset.v), btog: t => setBrief(t.dataset.k, t.dataset.v, true), bfill: () => fillBrief(), bextclear: () => { const b = brief(); Object.assign(b, { ext: {}, footprint: '', features: [], roomStyle: '', walkout: false, bbeds: null }); renderBrief(); }, build: () => buildHouse(),
   bpre: t => { brief().tech = TECH_SETS[t.dataset.v].slice(); renderBrief(); }, btech: t => { const a = brief().tech, i = a.indexOf(t.dataset.v); if (i >= 0) a.splice(i, 1); else a.push(t.dataset.v); renderBrief(); },
   tpre: t => { P.tech = TECH_SETS[t.dataset.v].slice(); applyTech(); commit(); renderSheet(); }, ttech: t => { P.tech = P.tech || []; const i = P.tech.indexOf(t.dataset.v); if (i >= 0) P.tech.splice(i, 1); else P.tech.push(t.dataset.v); applyTech(); commit(); renderSheet(); },
   setext: t => { P.ext[t.dataset.slot] = t.dataset.k; commit(); renderSheet(); },
