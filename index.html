@@ -556,6 +556,7 @@ const TYPES = {
   rec: { n: 'Rec room', w: 5.4, d: 5.0, floor: 'lvp_grey', walls: 'greige', f: 'bar', kw: ['rec room', 'recreation', 'games room', 'game room', 'playroom', 'man cave'], items: [['pool_table', 'C', .5], ['sofa', 'S', .3], ['tv', 'W', .5], ['bar', 'N', .3, { dy: .9 }], ['back_bar', 'N', .3], ['stools', 'N', .3, { dy: 1.6 }]], win: [] },
   bar: { n: 'Bar', w: 3.6, d: 3.0, floor: 'walnut', walls: 'charcoal', f: 'bar', kw: ['bar', 'pub', 'lounge bar'], items: [['back_bar', 'N', .5], ['bar', 'N', .5, { dy: 1.0 }], ['stools', 'N', .5, { dy: 1.7 }]], win: [] },
   wine: { n: 'Wine cellar', w: 2.4, d: 2.6, floor: 'tile_slate', walls: 'brick_int', f: 'bar', kw: ['wine'], items: [['wine_rack', 'N', .5], ['wine_rack', 'E', .5], ['wine_rack', 'W', .5]], win: [] },
+  sauna: { n: 'Sauna', w: 2.0, d: 2.2, floor: 'tile_slate', walls: 'pine_ceiling', wet: 1, f: 'bathroom', minDoor: 610, kw: ['sauna', 'steam'], items: [['sauna', 'C', .5]], win: [] },
   utility: { n: 'Mechanical room', w: 2.8, d: 3.0, floor: 'concrete', walls: 'white', unfin: 1, f: 'utility', minDoor: 810, kw: ['mechanical', 'utility', 'furnace'], items: [['furnace', 'N', .2], ['water_heater', 'N', .6], ['hrv', 'E', .3], ['elec_panel', 'W', .4], ['sump', 'S', .9]], win: [] },
   storage: { n: 'Storage', w: 2.6, d: 2.6, floor: 'concrete', walls: 'white', unfin: 1, kw: ['storage', 'cold room'], items: [['shelving', 'N', .3], ['shelving', 'N', .75], ['shelving', 'E', .5]], win: [] },
   workshop: { n: 'Workshop', w: 4.0, d: 3.6, floor: 'concrete', walls: 'white', unfin: 1, f: 'garage', kw: ['workshop', 'shop'], items: [['workbench', 'N', .35], ['tool_chest', 'N', .8], ['shelving', 'E', .5], ['workbench', 'S', .5]], win: [] },
@@ -910,6 +911,7 @@ Object.assign(ITEMS, {
   plant_small: { n: 'Small plant', c: 'Decor', w: .24, d: .24, h: .34, z: .58, col: 'plant', parts: [[.2, .2, 0, .8, .8, .4, 'ceramic'], [0, 0, .36, 1, 1, .8, '$c'], [.2, .2, .8, .8, .8, 1, '$c']] },
   plant_hang: { n: 'Hanging plant', c: 'Decor', w: .36, d: .36, h: .95, top: 1, col: 'plant', parts: [[.47, .47, .45, .53, .53, 1, 'matte_black'], [.2, .2, .28, .8, .8, .46, 'ceramic'], [0, 0, 0, 1, 1, .36, '$c']] },
   basket: { n: 'Woven basket', c: 'Decor', w: .45, d: .45, h: .42, col: 'wood_light', parts: [[0, 0, 0, 1, 1, 1, '$c'], [.1, .1, 1, .9, .9, 1.12, 'linen']] },
+  fireplace_see: { n: 'See-through fireplace, plaster chimney', c: 'Media', w: 1.9, d: .7, h: 2.7, col: 'limewash_white', parts: [[0, 0, 0, 1, 1, 1, '$c'], [.12, -.01, .3, .88, 1.01, .52, 'matte_black'], [.16, .3, .34, .84, .7, .48, 'glow_fire'], [0, -.04, 0, 1, 1.04, .08, 'concrete']] },
   fireplace_modern: { n: 'Linear fireplace', c: 'Media', w: 1.8, d: .22, h: 2.4, col: 'charcoal', parts: [[0, 0, 0, 1, 1, 1, '$c'], [.08, .9, .12, .92, 1.03, .3, 'matte_black'], [.12, 1.03, .14, .88, 1.06, .2, 'glow_fire']] },
   // light fixtures
   pot_light: { n: 'Pot light', c: 'Lighting', w: .13, d: .13, h: .02, top: 1, lm: 750, col: 'glow_warm', parts: [[0, 0, 0, 1, 1, 1, '$c'], [-.15, -.15, .6, 1.15, 1.15, 1, 'trim']] },
@@ -1389,6 +1391,7 @@ function gradeAt(x, z) { // ground height relative to the house's floor datum (0
     const B = bbox(indoor('B')), low = levelY('B') - .12, w = s.toward;
     const d = w == 'S' ? z - B.y1 : w == 'N' ? B.y0 - z : w == 'E' ? x - B.x1 : B.x0 - x, along = w == 'N' || w == 'S' ? Math.max(B.x0 - x, x - B.x1, 0) : Math.max(B.y0 - z, z - B.y1, 0);
     if (d > -.5) { const k = Math.min(1, Math.max(0, d) / 8) ** 1.5, side = Math.min(1, along / 4), blend = Math.max(k, side); gr = Math.min(gr, low + (gr - low) * blend); }
+    for (const c of s.courts || []) { const dx = Math.max(c.x - x, x - c.x - c.w, 0), dz = Math.max(c.y - z, z - c.y - c.d, 0), dd = Math.hypot(dx, dz); if (dd < 1.2) gr = Math.min(gr, low + (gr - low) * (dd / 1.2) ** 2); } // a walk-out court dug down between wings
   }
   return gr;
 }
@@ -1695,13 +1698,15 @@ function buildCeiling(g, r, showCeil) { // replaces the flat ceiling slab for sp
     if (along) { const zm = (z0 + z1) / 2, h = (z1 - z0) / 2, n1 = [0, -h, R], n2 = [0, -h, -R], l = Math.hypot(h, R);
       g.quad([x0, cy, z0], [x1, cy, z0], [x1, cy + R, zm], [x0, cy + R, zm], n1.map(v => v / l), cm); g.quad([x0, cy, z1], [x1, cy, z1], [x1, cy + R, zm], [x0, cy + R, zm], n2.map(v => v / l), cm);
       g.quad([x0, cy + .002, z0], [x1, cy + .002, z0], [x1, cy + R + .2, zm], [x0, cy + R + .2, zm], n1.map(v => -v / l), cm); g.quad([x0, cy + .002, z1], [x1, cy + .002, z1], [x1, cy + R + .2, zm], [x0, cy + R + .2, zm], n2.map(v => -v / l), cm);
-      g.tri([x0 + .061, cy, z0], [x0 + .061, cy, z1], [x0 + .061, cy + R, zm], [1, 0, 0], wm); g.tri([x1 - .061, cy, z0], [x1 - .061, cy, z1], [x1 - .061, cy + R, zm], [-1, 0, 0], wm);
-      if (ct == 'cathedral') { g.box(x0, cy + R - .26, zm - .09, x1, cy + R - .02, zm + .09, wd); for (let x = x0 + 1.2; x < x1 - .4; x += 1.2) for (const s of [-1, 1]) { const za = s < 0 ? z0 : z1; g.box(x - .06, cy - .02, Math.min(za, zm), x + .06, cy + .14, Math.max(za, zm), wd); } }
+      if (!openEnd(r, 'W')) g.tri([x0 + .061, cy, z0], [x0 + .061, cy, z1], [x0 + .061, cy + R, zm], [1, 0, 0], wm); if (!openEnd(r, 'E')) g.tri([x1 - .061, cy, z0], [x1 - .061, cy, z1], [x1 - .061, cy + R, zm], [-1, 0, 0], wm);
+      if (r.steel) steelFrames(g, r, R, true);
+      else if (ct == 'cathedral') { g.box(x0, cy + R - .26, zm - .09, x1, cy + R - .02, zm + .09, wd); for (let x = x0 + 1.2; x < x1 - .4; x += 1.2) for (const s of [-1, 1]) { const za = s < 0 ? z0 : z1; g.box(x - .06, cy - .02, Math.min(za, zm), x + .06, cy + .14, Math.max(za, zm), wd); } }
     } else { const xm = (x0 + x1) / 2, h = (x1 - x0) / 2, n1 = [-h, R, 0].map((v, i) => i == 1 ? -h : i == 0 ? R : 0), l = Math.hypot(h, R);
       g.quad([x0, cy, z0], [x0, cy, z1], [xm, cy + R, z1], [xm, cy + R, z0], [R / l, -h / l, 0], cm); g.quad([x1, cy, z0], [x1, cy, z1], [xm, cy + R, z1], [xm, cy + R, z0], [-R / l, -h / l, 0], cm);
       g.quad([x0, cy + .002, z0], [x0, cy + .002, z1], [xm, cy + R + .2, z1], [xm, cy + R + .2, z0], [-R / l, h / l, 0], cm); g.quad([x1, cy + .002, z0], [x1, cy + .002, z1], [xm, cy + R + .2, z1], [xm, cy + R + .2, z0], [R / l, h / l, 0], cm);
-      g.tri([x0, cy, z0 + .061], [x1, cy, z0 + .061], [xm, cy + R, z0 + .061], [0, 0, 1], wm); g.tri([x0, cy, z1 - .061], [x1, cy, z1 - .061], [xm, cy + R, z1 - .061], [0, 0, -1], wm);
-      if (ct == 'cathedral') { g.box(xm - .09, cy + R - .26, z0, xm + .09, cy + R - .02, z1, wd); for (let z = z0 + 1.2; z < z1 - .4; z += 1.2) g.box(x0, cy - .02, z - .06, x1, cy + .14, z + .06, wd); }
+      if (!openEnd(r, 'N')) g.tri([x0, cy, z0 + .061], [x1, cy, z0 + .061], [xm, cy + R, z0 + .061], [0, 0, 1], wm); if (!openEnd(r, 'S')) g.tri([x0, cy, z1 - .061], [x1, cy, z1 - .061], [xm, cy + R, z1 - .061], [0, 0, -1], wm);
+      if (r.steel) steelFrames(g, r, R, false);
+      else if (ct == 'cathedral') { g.box(xm - .09, cy + R - .26, z0, xm + .09, cy + R - .02, z1, wd); for (let z = z0 + 1.2; z < z1 - .4; z += 1.2) g.box(x0, cy - .02, z - .06, x1, cy + .14, z + .06, wd); }
       void n1;
     }
     return;
@@ -1759,6 +1764,29 @@ function voidSVG(pal, ppm) { // on the upper plan: the two-storey spaces below, 
 }
 
 function voidIvAll(r) { return 'NESW'.split('').some(w => voidIv(r, w).length); }
+
+// a bar between two points with a rectangular section: w across (horizontal), h in the plane of the bar
+function barBox(g, a, b, w, h, m) {
+  const d = [b[0] - a[0], b[1] - a[1], b[2] - a[2]], L = Math.hypot(...d) || 1, u = d.map(v => v / L);
+  let s = [-u[2], 0, u[0]]; const sl = Math.hypot(...s); s = sl < 1e-6 ? [1, 0, 0] : s.map(v => v / sl);
+  const t = [u[1] * s[2] - u[2] * s[1], u[2] * s[0] - u[0] * s[2], u[0] * s[1] - u[1] * s[0]];
+  const P8 = (p, i, j) => [p[0] + s[0] * w * i + t[0] * h * j, p[1] + s[1] * w * i + t[1] * h * j, p[2] + s[2] * w * i + t[2] * h * j];
+  const c = [[-.5, -.5], [.5, -.5], [.5, .5], [-.5, .5]], A = c.map(([i, j]) => P8(a, i, j)), B = c.map(([i, j]) => P8(b, i, j));
+  for (let k = 0; k < 4; k++) { const k2 = (k + 1) % 4, n = [s, t, s.map(v => -v), t.map(v => -v)][k == 0 ? 3 : k == 1 ? 0 : k == 2 ? 1 : 2]; g.quad(A[k], A[k2], B[k2], B[k], n, m); }
+  g.quad(A[3], A[2], A[1], A[0], u.map(v => -v), m); g.quad(B[0], B[1], B[2], B[3], u, m);
+}
+// exposed black steel portal frames: a column at each long wall and rafters following the ceiling up to a ridge beam
+function steelFrames(g, r, R, along) {
+  const st = mat('matte_black'), cy = ceilY(r), fy = floorY(r), x0 = r.x, x1 = r.x + r.w, z0 = r.y, z1 = r.y + r.d, len = along ? r.w : r.d, n = Math.max(1, Math.round(len / 3.2)), off = .07, cs = .14;
+  for (let i = 0; i <= n; i++) {
+    const t = n ? i / n : .5, a = along ? x0 + .25 + (r.w - .5) * t : z0 + .25 + (r.d - .5) * t;
+    if (along) { const zm = (z0 + z1) / 2;
+      for (const [zw, s] of [[z0 + off, 1], [z1 - off, -1]]) { g.box(a - cs / 2, fy, Math.min(zw, zw + s * cs), a + cs / 2, cy, Math.max(zw, zw + s * cs), st); barBox(g, [a, cy - .1, zw + s * cs / 2], [a, cy + R - .2, zm], cs, .2, st); } }
+    else { const xm = (x0 + x1) / 2;
+      for (const [xw, s] of [[x0 + off, 1], [x1 - off, -1]]) { g.box(Math.min(xw, xw + s * cs), fy, a - cs / 2, Math.max(xw, xw + s * cs), cy, a + cs / 2, st); barBox(g, [xw + s * cs / 2, cy - .1, a], [xm, cy + R - .2, a], cs, .2, st); } }
+  }
+  if (along) g.box(x0, cy + R - .3, (z0 + z1) / 2 - .08, x1, cy + R - .08, (z0 + z1) / 2 + .08, st); else g.box((x0 + x1) / 2 - .08, cy + R - .3, z0, (x0 + x1) / 2 + .08, cy + R - .08, z1, st);
+}
 
 // ---------- Material advisor: what each finish is good and bad at, where it belongs, and what it asks of the rest of the house ----------
 // Scores 1 to 5: budget (5 = least expensive), durable, water (or weather), upkeep (5 = least work), pets (scratch and stain), comfort (warm, soft, quiet).
@@ -2703,7 +2731,7 @@ function levelOpenings(lv) {
       const e = edge(r, d.wall), [a, b] = openSpan(r, d), m = (a + b) / 2;
       const nb = neighbors(r, d.wall).find(n => n.a < m && n.b > m);
       const y0 = Math.max(floorY(r), nb ? floorY(nb.o) : -99);
-      out.push({ h: e.h, c: e.c, a, b, y0, y1: y0 + (d.kind == 'garage' ? 2.13 : 2.03) + (d.tr && d.kind != 'garage' ? .45 : 0), o: d, r, door: 1, nb: nb && nb.o });
+      out.push({ h: e.h, c: e.c, a, b, y0, y1: d.full && d.kind == 'opening' ? 99 : y0 + (d.kind == 'garage' ? 2.13 : 2.03) + (d.tr && d.kind != 'garage' ? .45 : 0), o: d, r, door: 1, nb: nb && nb.o, full: d.full && d.kind == 'opening' ? 1 : 0 });
     }
     for (const w of r.wins) { const e = edge(r, w.wall), [a, b] = openSpan(r, w), y0 = levelY(lv) + w.sill; out.push({ h: e.h, c: e.c, a, b, y0, y1: y0 + w.h, o: w, r }); }
     for (const j of joins(r)) out.push({ h: j.h, c: j.c, a: j.a, b: j.b, y0: -99, y1: 99, o: { kind: 'join', w: j.b - j.a }, r, door: 1, nb: j.o, join: 1 });
@@ -2819,16 +2847,21 @@ function roofSplit(c) { // one cluster of roof pieces -> a main roof plus wings 
 }
 let ROOFC = { k: null, v: null };
 function roofs() {
-  const key = JSON.stringify([P.rooms.map(r => [r.x, r.y, r.w, r.d, r.lv, r.type, r.ct, r.part]), P.ext.pitch, P.ext.shape, lvH('M'), lvH('U'), lvH('B')]);
+  const key = JSON.stringify([P.rooms.map(r => [r.x, r.y, r.w, r.d, r.lv, r.type, r.ct, r.part, r.flat]), P.ext.pitch, P.ext.shape, lvH('M'), lvH('U'), lvH('B'), P.roofPlan]);
   if (ROOFC.k !== key) { ROOFC = { k: key, v: roofsCalc() }; }
   return ROOFC.v.map(q => ({ ...q, ab: { ...q.ab } }));
 }
 function roofsCalc() {
   const out = [];
+  if (Array.isArray(P.roofPlan) && P.roofPlan.length && P.roofPlanKey == roofPlanKey()) { // a design that states its roofs: each volume, its ridge direction, and which ends run into another roof
+    for (const q of P.roofPlan) { const lv = q.lv || 'M', base = levelY(lv) + lvH(lv) + .15, span = q.ax == 'x' ? q.y1 - q.y0 : q.x1 - q.x0; out.push({ x0: q.x0, y0: q.y0, x1: q.x1, y1: q.y1, w: q.x1 - q.x0, d: q.y1 - q.y0, ax: q.ax, base, rise: (span / 2 + .17) * P.ext.pitch + .03, lv, ab: Object.assign({ N: 0, S: 0, E: 0, W: 0 }, q.ab || {}), wing: q.wing ? 1 : 0, stopA: q.stopA, stopB: q.stopB }); }
+    if (!classicRoof()) for (const q of out) q.rise = roofRise(q);
+    return out;
+  }
   for (const lv of ['M', 'U']) {
     const dbl = typeof doubles == 'function' ? doubles() : [], rs = lv == 'U' ? [...indoor('U'), ...dbl] : indoor('M'); if (!rs.length) continue;
     const up = lv == 'M' ? [...indoor('U'), ...dbl] : [];
-    const pcs = []; for (const r of rs) { const qs = lv == 'M' ? rectMinus(r, up.filter(u => u !== r)) : [{ x: r.x, y: r.y, w: r.w, d: r.d }], whole = qs.length == 1 && Math.abs(qs[0].w - r.w) < .01 && Math.abs(qs[0].d - r.d) < .01; for (const q of qs) if (whole || (q.w * q.d >= 1.2 && Math.min(q.w, q.d) >= .6)) pcs.push(q); }
+    const pcs = []; for (const r of rs) { if (r.flat) continue; const qs = lv == 'M' ? rectMinus(r, up.filter(u => u !== r)) : [{ x: r.x, y: r.y, w: r.w, d: r.d }], whole = qs.length == 1 && Math.abs(qs[0].w - r.w) < .01 && Math.abs(qs[0].d - r.d) < .01; for (const q of qs) if (whole || (q.w * q.d >= 1.2 && Math.min(q.w, q.d) >= .6)) pcs.push(q); }
     const cl = [];
     for (const r of pcs) {
       const hit = cl.filter(c => c.some(q => ovl(r.x - .1, r.x + r.w + .1, q.x, q.x + q.w) && ovl(r.y - .1, r.y + r.d + .1, q.y, q.y + q.d)));
@@ -2841,8 +2874,8 @@ function roofsCalc() {
       const parts = roofSplit(c), m = parts[0], mab = abOf(m), max = axOf(m, mab); out.push({ ...mk(m, max), ab: mab });
       for (const s of parts.slice(1)) { // wings run into the main roof up to its ridge, at right angles to it
         const t = { ...s }; let ax;
-        if (max == 'x') { const ym = (m.y0 + m.y1) / 2; if (t.y1 > m.y1 + .3 && t.x0 >= m.x0 - .05 && t.x1 <= m.x1 + .05) { t.y0 = Math.max(Math.min(t.y0, m.y1), ym); ax = 'y'; } else if (t.y0 < m.y0 - .3 && t.x0 >= m.x0 - .05 && t.x1 <= m.x1 + .05) { t.y1 = Math.min(Math.max(t.y1, m.y0), ym); ax = 'y'; } else { if (t.x1 > m.x1 + .3) t.x0 = Math.max(t.x0, m.x1); else if (t.x0 < m.x0 - .3) t.x1 = Math.min(t.x1, m.x0); } }
-        else { const xm = (m.x0 + m.x1) / 2; if (t.x1 > m.x1 + .3 && t.y0 >= m.y0 - .05 && t.y1 <= m.y1 + .05) { t.x0 = Math.max(Math.min(t.x0, m.x1), xm); ax = 'x'; } else if (t.x0 < m.x0 - .3 && t.y0 >= m.y0 - .05 && t.y1 <= m.y1 + .05) { t.x1 = Math.min(Math.max(t.x1, m.x0), xm); ax = 'x'; } else { if (t.y1 > m.y1 + .3) t.y0 = Math.max(t.y0, m.y1); else if (t.y0 < m.y0 - .3) t.y1 = Math.min(t.y1, m.y0); } }
+        if (max == 'x') { const ym = (m.y0 + m.y1) / 2; if (t.y1 > m.y1 + .3 && t.x0 >= m.x0 - .05 && t.x1 <= m.x1 + .05) { t.y0 = Math.max(Math.min(t.y0, m.y1), ym); t.stopA = m.y1; ax = 'y'; } else if (t.y0 < m.y0 - .3 && t.x0 >= m.x0 - .05 && t.x1 <= m.x1 + .05) { t.y1 = Math.min(Math.max(t.y1, m.y0), ym); t.stopB = m.y0; ax = 'y'; } else { if (t.x1 > m.x1 + .3) t.x0 = Math.max(t.x0, m.x1); else if (t.x0 < m.x0 - .3) t.x1 = Math.min(t.x1, m.x0); } }
+        else { const xm = (m.x0 + m.x1) / 2; if (t.x1 > m.x1 + .3 && t.y0 >= m.y0 - .05 && t.y1 <= m.y1 + .05) { t.x0 = Math.max(Math.min(t.x0, m.x1), xm); t.stopA = m.x1; ax = 'x'; } else if (t.x0 < m.x0 - .3 && t.y0 >= m.y0 - .05 && t.y1 <= m.y1 + .05) { t.x1 = Math.min(Math.max(t.x1, m.x0), xm); t.stopB = m.x0; ax = 'x'; } else { if (t.y1 > m.y1 + .3) t.y0 = Math.max(t.y0, m.y1); else if (t.y0 < m.y0 - .3) t.y1 = Math.min(t.y1, m.y0); } }
         if (t.x1 - t.x0 < .6 || t.y1 - t.y0 < .6) continue;
         const ab = abOf(t); out.push({ ...mk(t, ax || axOf(t, ab)), ab, wing: 1 });
       }
@@ -3254,6 +3287,11 @@ function wallSpans(r, w, wins) { // openings (and open joins) on one of this roo
   const e = edge(r, w); return levelOpenings(r.lv).filter(o => o.h == e.h && Math.abs(o.c - e.c) < EPS && o.b > e.a + .05 && o.a < e.b - .05 && (wins ? !o.door : o.door)).map(o => [o.a - e.a, o.b - e.a]);
 }
 
+function roofPlanKey() { return indoor('M').filter(r => !r.flat).map(r => [r.x, r.y, r.w, r.d].map(v => Math.round(v * 20)).join(',')).sort().join(';'); }
+function openEnd(r, w) { // this wall is mostly a full-height opening to the next room, so a vaulted ceiling flows through
+  const e = edge(r, w); let v = 0; for (const o of levelOpenings(r.lv)) if (o.full && o.h == e.h && Math.abs(o.c - e.c) < EPS) v += Math.max(0, Math.min(o.b, e.b) - Math.max(o.a, e.a)); return v >= (e.b - e.a) * .55;
+}
+
 // ---------- 2D plans (SVG): used by the editor and by the builder package ----------
 const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const matHex = k => k && k[0] == '#' ? k : (MATS[k] || MATS.white)[2];
@@ -3414,7 +3452,9 @@ function roofGeom(r) {
   const ye = r.base + .03 - (e - .17) * p, yr = r.base + .03 + ((v1 - v0) / 2 + .17) * p, hl = (v1 - v0) / 2 + e, hipA = hipOn && !abA, hipB = hipOn && !abB;
   let ua = hipA ? U0 + hl : U0, ub = hipB ? U1 - hl : U1;
   if (ua > ub) ua = ub = hipA && hipB ? (U0 + U1) / 2 : hipA ? U1 : U0;
-  return { e, p, x, U0, U1, v0, v1, vm, ye, yr, hl, ua, ub, hipA, hipB, abA, abB };
+  // where a wing runs into a bigger roof, its eaves stop at the wall and the valley climbs to the ridge, so nothing hangs inside the other roof
+  const eU0 = abA && r.stopA != null ? r.stopA - e * .2 : U0, eU1 = abB && r.stopB != null ? r.stopB + e * .2 : U1;
+  return { e, p, x, U0, U1, v0, v1, vm, ye, yr, hl, ua, ub, hipA, hipB, abA, abB, eU0, eU1 };
 }
 function dormerSpots(r, G) {
   let n = classicRoof() ? P.ext.dormers | 0 : 0; if (n <= 0 || r.ax != 'x') return [];
@@ -3529,7 +3569,7 @@ function cleanBrief(o) {
   const d = defaultBrief(), b = Object.assign({}, d, o && typeof o == 'object' ? o : {});
   b.storeys = +b.storeys == 1 ? 1 : 2; b.size = SIZES[b.size] ? b.size : 'family'; b.beds = clamp(Math.round(+b.beds) || 3, 2, 5); b.garage = clamp(Math.round(+b.garage) || 0, 0, 3);
   b.front = b.front == 'dining' ? 'dining' : 'office'; b.basement = !!b.basement; b.bbath = !!b.bbath; b.wine = !!b.wine;
-  b.bx = [...new Set((Array.isArray(b.bx) ? b.bx : []).filter(k => ['theater', 'rec', 'gym', 'guest', 'workshop'].includes(k)))].slice(0, 3);
+  b.bx = [...new Set((Array.isArray(b.bx) ? b.bx : []).filter(k => ['theater', 'rec', 'gym', 'guest', 'workshop', 'family', 'sauna'].includes(k)))].slice(0, 4);
   b.out = [...new Set((Array.isArray(b.out) ? b.out : []).filter(k => ['deck', 'patio', 'yard', 'garden'].includes(k)))];
   b.look = LOOKS[b.look] ? b.look : 'coastal'; b.style = STYLES[b.style] ? b.style : ''; b.siding = MATS[b.siding] && MATS[b.siding][6].includes('x') ? b.siding : ''; b.roof = MATS[b.roof] && MATS[b.roof][6].includes('r') ? b.roof : '';
   b.tech = [...new Set((Array.isArray(b.tech) ? b.tech : []).filter(k => TECH.some(t => t[0] == k)))];
@@ -3539,6 +3579,7 @@ function cleanBrief(o) {
   const FEATS = ['glassRear', 'cathedralLiving', 'vaultPrimary', 'skylights', 'mediaWall', 'bifoldDeck', 'archEntry', 'mudLockers'];
   b.features = [...new Set((Array.isArray(b.features) ? b.features : []).filter(k => typeof k == 'string' && (FEATS.includes(k) || /^kitchen:(L|U|galley)$/.test(k) || (typeof YARD_PACKS != 'undefined' && /^yard:/.test(k) && YARD_PACKS[k.slice(5)]))))];
   b.roomStyle = typeof ROOM_STYLES != 'undefined' && ROOM_STYLES[b.roomStyle] ? b.roomStyle : '';
+  b.layout = b.layout == 'barn' ? 'barn' : 'standard'; if (b.layout == 'barn') { b.storeys = 1; b.basement = true; b.walkout = true; }
   const x = b.ext && typeof b.ext == 'object' ? b.ext : {}, X = {};
   if (+x.pitch > 0) X.pitch = clamp(+x.pitch > 2 ? +x.pitch / 12 : +x.pitch, .17, 1.17);
   if (['gable', 'hip', 'shed', 'flat', 'gambrel', 'mansard'].includes(x.shape)) X.shape = x.shape;
@@ -3553,7 +3594,9 @@ function cleanBrief(o) {
 function bsmtPlan(b) {
   const cap = b.storeys == 2 ? 4 : 3, bb = b.basement && b.bbeds != null ? Math.min(b.bbeds, 3, b.beds - 1) : null;
   const bedN = bb != null ? clamp(b.beds - bb, 1, cap) : Math.min(b.beds, cap), gN = b.basement ? Math.min(3, Math.max(b.beds - bedN, b.bx.includes('guest') ? 1 : 0)) : 0;
-  return { bedN, guest: gN > 0, gN, want: Array(gN).fill('guest').concat(b.bx.filter(k => k != 'guest')).slice(0, 3) };
+  const wing = b.storeys == 1 && b.basement && gN >= 2; // bungalows dig under the bedroom wing too, and the extra bedrooms go there
+  if (wing) return { bedN, guest: true, gN, wing, want: b.bx.filter(k => k != 'guest' && k != 'sauna').slice(0, 2), sauna: b.bx.includes('sauna') };
+  return { bedN, guest: gN > 0, gN, wing: false, sauna: false, want: Array(gN).fill('guest').concat(b.bx.filter(k => k != 'guest')).slice(0, 3) };
 }
 function briefSize(b) { const [W, D] = SIZES[b.size], wing = b.storeys == 1 ? 7.2 : 0, gw = GAR_W[b.garage]; return { W, D, wing, gw, total: wing + W + gw, main: (wing ? 7.2 * D : 0) + W * D, upper: b.storeys == 2 ? W * D : 0, bsmt: b.basement ? W * D : 0 }; }
 function briefFromText(text) { // offline reading of a free description
@@ -3571,6 +3614,7 @@ function briefFromText(text) { // offline reading of a free description
   if (/farmhouse/.test(s)) b.style = 'farmhouse'; else if (/cape|shake|shingle style/.test(s)) b.style = 'cape'; else if (/craftsman|bungalow style/.test(s)) b.style = 'craftsman'; else if (/modern|minimal/.test(s)) b.style = 'modern';
   if (/modern|minimal/.test(s)) b.look = 'modern'; if (/scandi|nordic/.test(s)) b.look = 'scandi'; if (/classic|traditional|warm/.test(s)) b.look = 'classic';
   if (/net[\s-]?zero|passive/.test(s)) b.tech = TECH_SETS.netzero.slice(); else { const t = []; if (/solar/.test(s)) t.push('solar'); if (/batter/.test(s)) t.push('battery'); if (/ev\b|electric (car|vehicle)|tesla/.test(s)) t.push('ev'); if (/smart/.test(s)) t.push('smart_home', 'smart_panel'); if (t.length) b.tech = [...new Set([...TECH_SETS.efficient, ...t])]; }
+  if ((/new barn|nordic barn|scandinavian barn|légué|legue/.test(s) || (/scandinavian|nordic/.test(s) && /barn/.test(s))) && /walk[\s-]?out/.test(s)) b.layout = 'barn';
   if (/new barn|nordic barn|scandinavian barn|barn[\s-]?style/.test(s) || (/scandinavian|nordic/.test(s) && /barn|metal roof|standing[\s-]seam/.test(s))) b.style = 'newbarn'; else if (/scandinavian|nordic/.test(s) && !b.style) b.style = 'nordic';
   const X = {}; m = s.match(/(\d{1,2})\s*\/\s*12/); if (m) X.pitch = +m[1]; else if (/steep/.test(s)) X.pitch = 10;
   if (/no overhang|almost no overhang|minimal overhang|flush eave|tight eave/.test(s)) X.eave = 'none'; else if (/deep overhang|deep eave/.test(s)) X.eave = 'deep';
@@ -3609,6 +3653,7 @@ SCHEMA:
 "siding":one of ${mats('x')},
 "roof":one of ${mats('r')},
 "ext":{"pitch":roof rise per 12 (e.g. 12 for 12/12),"shape":"gable"|"hip"|"shed"|"flat","eave":"none"|"tight"|"standard"|"deep" (roof overhang),"frame":"black"|"white"|"bronze"|"charcoal"|"wood"|"steel" (window frames),"glaze":"std"|"large"|"max" (window size; max = floor to ceiling),"garage_door":"panel"|"row"|"glass" (glass = full-view aluminium and frosted glass),"entry":"panel"|"glass" (glass = glass door with full-height sidelights and transom),"sconce":"lantern"|"cylinder" (wall lights),"door":"#hex front door colour","gdoor":"#hex garage door colour"},
+"layout":"standard"|"barn" (barn = Nordic barn bungalow: a long steep gable bar meeting a full-depth garage volume whose gable faces the street, a rear wing with its gable to the yard, a recessed two-level covered terrace between them, a flat-roofed glass entry link, cathedral great room with steel frames, see-through fireplace, and a walk-out basement with 3 bedrooms, gym, sauna and family room; choose it for Légué-style new barn or Scandinavian barn houses with a walk-out),
 "footprint":"" or one of ${FOOTPRINTS.map(f => f[0] + ' (' + f[2] + ')').join('; ')},
 "features":[any of "glassRear" (big glass wall to the backyard),"cathedralLiving" (cathedral ceiling over the living and kitchen, bungalows),"vaultPrimary" (vaulted or cathedral primary bedroom),"skylights","mediaWall" (built-in TV wall),"bifoldDeck" (folding glass doors to the deck),"archEntry","mudLockers","kitchen:L"|"kitchen:U"|"kitchen:galley",${Object.entries(YARD_PACKS).map(([k, v]) => '"yard:' + k + '" (' + v[0] + ')').join(',')}],
 "tech":[keys],"name":short project name,"why":one or two friendly sentences on the main choices, and anything the app cannot do yet}
@@ -3617,6 +3662,7 @@ Rules: an L-shaped house with the garage stepping toward the street is footprint
 }
 
 function generateHouse(brief) {
+  if (brief && brief.layout == 'barn' && typeof generateBarn == 'function') return generateBarn(cleanBrief(brief));
   const b0 = cleanBrief(brief), Zk = (P && P.zoning) || blankProject().zoning, order = ['large', 'family', 'compact'];
   let shrunk = ''; while (b0.size != 'compact' && briefSize(b0).total + .6 > b0.lotW - 2 * Zk.side) { shrunk = shrunk || b0.size; b0.size = order[order.indexOf(b0.size) + 1]; }
   const b = b0, look = LOOKS[b.look][2], keep = P || blankProject();
@@ -3631,7 +3677,7 @@ function generateHouse(brief) {
     const s = { type, name, w, d, items: o.items, windows: (o.wins || []).map(q => ({ wall: q[0], p: q[1], w: q[2], h: q[3], sill: q[4], style: q[5] || 'casement' })), doors: (o.doors || []).map(q => ({ wall: q[0], p: q[1], w: q[2], kind: q[3] || 'interior' })), feat: o.feat || [], floor: o.floor, walls: o.walls, ceil: o.ceil, cab: o.cab, ctr: o.ctr };
     const r = makeRoom(s, lv); r.x = r2(x); r.y = r2(y); if (o.dir) r.dir = o.dir; if (o.fence) r.fence = o.fence; P.rooms.push(r); return r;
   };
-  const { bedN, guest, want } = bsmtPlan(b);
+  const { bedN, guest, want, wing: bWing, sauna: bSauna, gN } = bsmtPlan(b);
   // ----- main floor
   const deck = b.out.includes('deck');
   R('M', 'living', 'Living room', x0, y0, hw, B, { floor: look.floor, walls: look.walls, items: [['fireplace', 'W', .5], ['sectional', 'E', .62], ['coffee_table', 'C', .62, { dx: hw / 2 - 2.25, r: 1 }], ['rug', 'C', .6, { dx: hw / 2 - 2.65, r: 1 }], ['plant', 'S', .08], ['floor_lamp', 'N', .05]],
@@ -3687,12 +3733,16 @@ function generateHouse(brief) {
     if (want.includes('theater')) slot.A = 'theater'; if (want.includes('rec')) slot.B = 'rec';
     for (const k of want) { if (k != 'guest' && Object.values(slot).includes(k)) continue; if (k == 'guest' && Object.values(slot).filter(v => v == 'guest').length >= want.filter(v => v == 'guest').length) continue; const f = ['C', 'B', 'A'].find(s => !slot[s]); if (f) slot[f] = k; }
     let gi = 0;
-    if (want.filter(v => v == 'guest').length > 1) b.bbath = true;
+    if (want.filter(v => v == 'guest').length > 1 || bWing) b.bbath = true;
     const cy = b.bbath ? yb + 1.8 : yb, cd = b.bbath ? 3.0 : 4.8, geo = { A: [x0, y0, hw, B], B: [x0 + hw, y0, 5.5, B], C: [x0, cy, a, cd] };
     const door = { A: ['S', hw - .5, .86], B: ['S', .75, 1.2, 'opening'], C: ['E', b.bbath ? 1.0 : 1.2, .81] };
     const bw = { A: [['N', hw / 2, 1.0, .5, 1.75, 'slider'], ['W', B / 2, 1.0, .5, 1.75, 'slider']], B: [['N', 1.2, 1.0, .5, 1.75, 'slider'], ['E', Math.min(3, B / 2), 1.0, .5, 1.75, 'slider']], C: [['S', a / 2, 1.2, .5, 1.75, 'slider'], ['W', cd / 2, 1.0, .5, 1.75, 'slider']] };
+    if (bWing) { if (slot.C && !slot.A) slot.A = slot.C; else if (slot.C && !slot.B) slot.B = slot.C; slot.C = null; }
     for (const s of 'ABC') {
+      if (bWing && s == 'C') continue;
       const [x, y, w, d] = geo[s], k = slot[s] || 'storage', o = { doors: [door[s]], wins: bw[s] };
+      if (k == 'family') { Object.assign(o, { floor: look.bed == 'maple' ? 'maple' : look.floor, walls: look.walls, items: [['media_unit', 'W', .5], ['tv', 'W', .5], ['sectional', 'E', .5], ['coffee_table', 'C', .5, { dx: .2 }], ['rug', 'C', .5, { dx: .2 }], ['floor_lamp', 'N', .1]], feat: ['Dimmable LED pot lights', 'Conduit behind the TV'] }); R('B', 'living', 'Family room', x, y, w, d, o); continue; }
+      if (k == 'sauna') { Object.assign(o, { walls: 'pine_ceiling', ceil: 'pine_ceiling', floor: 'tile_slate', wins: [], items: [['sauna', 'N', .3], ['shower', 'S', .8], ['bench', 'E', .6]], feat: ['Sauna heater on a dedicated 240 V circuit', 'Vapour barrier behind cedar lining', 'Floor drain'] }); R('B', 'sauna', 'Sauna and shower', x, y, w, d, o); continue; }
       if (k == 'theater') { const rw = Math.min(4.3, w - 1.15), row = rw >= 3.7 ? 'theater_row4' : 'theater_row'; Object.assign(o, { wins: [], items: s == 'A' ? [['proj_screen', 'N', .5, { w: r2(Math.min(3.2, w - 1.4, (d - 2.9) / .9)) }], ['speaker', 'N', .1], ['speaker', 'N', .9], ['subwoofer', 'N', .21], [row, 'C', (d - 2.75) / d, { r: 2, dx: Math.min(0, (rw - w) / 2 + .1) }], ['riser', 'S', (.05 + rw / 2) / w, { w: rw }], [row, 'S', (.05 + rw / 2) / w, { z: .3, dy: -.45 }], ['projector', 'C', .62], ['acoustic_panel', 'W', .42], ['acoustic_panel', 'E', .4], ['sconce', 'W', .8], ['sconce', 'E', .78]] : undefined, feat: ['Dedicated 20 A audio circuit', 'Conduit from rack to projector', 'In-wall speaker wiring, 7.2.4 Atmos', 'Mineral wool sound insulation', 'Double drywall on resilient channel', 'LED step lighting on riser', 'Solid-core door with acoustic seals'] }); R('B', 'theater', 'Home theatre', x, y, w, d, o); }
       else if (k == 'rec') { Object.assign(o, { ctr: 'granite', items: s == 'B' ? [['back_bar', 'N', .72], ['bar', 'N', .72, { dy: 1.0 }], ['stools', 'N', .72, { dy: 1.72, r: 2 }], ['pool_table', 'C', Math.max(3.75, d * .68) / d, { dx: -.5 }], ...(b.wine ? [['wine_rack', 'W', .16]] : [])] : undefined, feat: ['Bar sink with drain', 'Under-counter beverage fridge'] }); R('B', 'rec', 'Rec room and bar', x, y, w, d, o); }
       else if (k == 'gym') { Object.assign(o, { items: s == 'C' && !b.bbath ? [['power_rack', 'N', .28], ['dumbbells', 'E', .72], ['treadmill', 'S', .25], ['yoga_mat', 'C', .6, { dx: .5 }], ['gym_mirror', 'W', .5]] : [['treadmill', 'S', .25], ['dumbbells', 'W', .5], ['yoga_mat', 'C', .5, { dx: .6 }]], feat: ['Rubber flooring, 9 mm', 'Ductless mini-split head'] }); R('B', 'gym', 'Home gym', x, y, w, d, o); }
@@ -3700,10 +3750,27 @@ function generateHouse(brief) {
       else if (k == 'workshop') { Object.assign(o, { items: [['workbench', 'N', .35], ['tool_chest', 'N', .85], ['shelving', 'W', .6]], feat: ['Dedicated 20 A circuit'] }); R('B', 'workshop', 'Workshop', x, y, w, d, o); }
       else { Object.assign(o, { items: [['shelving', 'N', .25], ['shelving', 'N', .7], ...(b.wine && !want.includes('rec') ? [['wine_rack', 'W', .5]] : [])] }); R('B', 'storage', 'Storage', x, y, w, d, o); }
     }
-    if (b.bbath) { R('B', 'bathroom', 'Basement bathroom', x0 + a - 2.4, yb, 2.4, 1.8, { items: [['vanity', 'N', .28, { w: .8 }], ['toilet', 'N', .8], ['shower', 'S', .2]], doors: [['E', .9, .71]], feat: ['Exhaust fan ducted outside, on timer'] }); R('B', 'storage', 'Storage closet', x0, yb, r2(a - 2.4), 1.8, { items: a - 2.4 >= 1.4 ? [['shelving', 'N', .5]] : [], doors: [['S', (a - 2.4) / 2, .81]] }); }
+    if (bWing) { // bedrooms under the wing off a long corridor; a shower room and sauna beside it
+      const wo = siteCfg ? (P.site && P.site.walkout) || b.walkout : b.walkout, ys2 = r2(yb + 1.1), sd = r2(D - 4.8 - 1.6), nN = Math.min(2, gN), wb = r2(7.2 / nN);
+      R('B', 'hall', 'Lower corridor', wx, yb, r2(7.2 + a), 1.1, { floor: 'lvp_grey', walls: look.walls, doors: [['E', .55, .95, 'opening']] });
+      for (let i = 0; i < nN; i++) {
+        const bx0 = r2(wx + i * wb), nm = 'Bedroom ' + (bedN + 1 + i), pw = 1.2, cwid = r2(wb - pw);
+        R('B', 'bedroom', nm, bx0, y0, wb, sd, { floor: look.bed, walls: look.bedw, items: [['bed_queen', 'E', .5], ['nightstand', 'E', .5, { dy: -1.05 }], ['dresser', 'W', .5]], wins: wo ? [['N', wb / 2, Math.min(2.2, wb - 1), 1.6, .5]] : [['N', wb / 2, 1.0, 1.0, 1.1, 'casement']], doors: [['S', pw / 2, .81]], feat: [...BF, ...(wo ? [] : ['Window well, 760 mm clear, with drain'])] });
+        R('B', 'hall', nm + ' entry', bx0, r2(y0 + sd), pw, 1.6, { floor: 'lvp_grey', walls: look.bedw, doors: [['S', pw / 2, .81]] });
+        R('B', 'closet', nm + ' walk-in', r2(bx0 + pw), r2(y0 + sd), cwid, 1.6, { floor: look.bed, items: [['wardrobe', 'N', .5, { w: Math.min(1.9, cwid - .3) }]], doors: [['W', .8, .71]] });
+      }
+      if (gN >= 3) { const nm = 'Bedroom ' + (bedN + 3); R('B', 'bedroom', nm, wx, ys2, 4.2, 3.7, { floor: look.bed, walls: look.bedw, items: [['bed_queen', 'W', .5], ['wardrobe', 'E', .5, { w: 1.6 }]], wins: [['S', 2.1, 1.0, 1.0, 1.1, 'casement']], doors: [['N', 3.6, .81]], feat: [...BF, 'Window well, 760 mm clear, with drain'] }); }
+      else R('B', 'office', 'Hobby room', wx, ys2, 4.2, 3.7, { floor: 'lvp_grey', items: [['desk', 'S', .5], ['bookshelf', 'W', .5]], wins: [['S', 2.1, 1.0, 1.0, 1.1, 'casement']], doors: [['N', 3.6, .81]] });
+      R('B', 'utility', 'Mechanical and storage', r2(wx + 4.2), ys2, 3.0, 3.7, { items: [['shelving', 'S', .3], ['shelving', 'E', .6]], doors: [['N', 1.5, .81]], feat: ['Heat pump air handler and ERV', 'Water heater'] });
+      R('B', 'bathroom', 'Shower room', x0, ys2, 2.4, 3.7, { items: [['vanity_double', 'S', .5, { w: 1.4 }], ['shower', 'E', .3], ['toilet', 'W', .35]], doors: [['N', 1.9, .71]], feat: ['Exhaust fan ducted outside, on timer', 'Curbless shower'] });
+      let sx2 = r2(x0 + 2.4);
+      if (bSauna && a - 2.4 >= 1.9) { const sw = r2(Math.min(2.4, a - 2.4)); R('B', 'sauna', 'Sauna', sx2, ys2, sw, 2.3, { walls: 'pine_ceiling', ceil: 'pine_ceiling', floor: 'tile_slate', items: [['sauna', 'C', .5]], doors: [['N', sw / 2, .71]], feat: ['Sauna heater on a dedicated 240 V circuit', 'Vapour barrier behind cedar lining', 'Floor drain'] }); R('B', 'storage', 'Towel storage', sx2, r2(ys2 + 2.3), sw, 1.4, { items: [['shelving', 'S', .5]], doors: [['W', .7, .71]] }); sx2 = r2(sx2 + sw); }
+      if (x0 + a - sx2 >= .9) R('B', 'storage', 'Storage', sx2, ys2, r2(x0 + a - sx2), 3.7, { items: [['shelving', 'S', .5]], doors: [['N', (x0 + a - sx2) / 2, Math.min(.81, r2(x0 + a - sx2 - .1))]] });
+    } else if (b.bbath) { R('B', 'bathroom', 'Basement bathroom', x0 + a - 2.4, yb, 2.4, 1.8, { items: [['vanity', 'N', .28, { w: .8 }], ['toilet', 'N', .8], ['shower', 'S', .2]], doors: [['E', .9, .71]], feat: ['Exhaust fan ducted outside, on timer'] }); R('B', 'storage', 'Storage closet', x0, yb, r2(a - 2.4), 1.8, { items: a - 2.4 >= 1.4 ? [['shelving', 'N', .5]] : [], doors: [['S', (a - 2.4) / 2, .81]] }); }
     R('B', 'hall', 'Lower hall', x0 + a, yb, 2.5, 4.8, { floor: 'lvp_grey', doors: [] });
     R('B', 'stairs', 'Basement stairs', sx, yb, 1.1, 4.8, { dir: 'N', floor: 'lvp_grey', doors: [['W', 4.35, .86, 'opening']] });
     R('B', 'utility', 'Mechanical room', ex, yb, 2.9, 4.8, { items: [['furnace', 'N', .2], ['water_heater', 'N', .46], ['hrv', 'E', .35], ['elec_panel', 'S', .5], ['sump', 'S', .9]], wins: [['S', 1.0, .8, .5, 1.75, 'slider']], doors: [['N', 2.4, .86]], feat: ['200 A service', 'Sump pump with battery backup'] });
+    if (bWing) for (const r of indoor('B')) if (r.wins && r.wins.length) r.wins = r.wins.filter(w => onExt(r, w)); // the wing can cover a wall that was outside
   }
   // ----- site
   const left = wing ? wx : x0, St = L.y + L.d;
@@ -3858,7 +3925,8 @@ const PLANS = [
   ['HW-121', 'Antigonish', 'Cape bungalow', { storeys: 1, size: 'family', beds: 3, garage: 1, basement: true, bx: ['rec'], front: 'dining', look: 'coastal', style: 'cape', out: ['deck', 'yard'] }, ['fp:court', 'coastal', 'cathedralLiving', 'yard:dogs']],
   ['HW-122', 'Margaree', 'Néo-champêtre two-storey', { storeys: 2, size: 'large', beds: 5, garage: 3, basement: true, bx: ['theater', 'rec', 'gym'], front: 'office', look: 'classic', style: 'neochamp', out: ['deck', 'yard', 'garden'] }, ['fp:garage_fwd', 'farmhouse', 'kitchen:U', 'mudLockers', 'vaultPrimary', 'yard:entertain']],
   ['HW-123', 'Ingonish', 'Minimal flat-roof bungalow', { storeys: 1, size: 'large', beds: 3, garage: 2, basement: true, bx: ['rec', 'gym'], front: 'office', look: 'modern', style: 'minimal', out: ['deck', 'yard'] }, ['japandi', 'glassRear', 'bifoldDeck', 'skylights', 'yard:pool']],
-  ['HW-124', 'Shelburne', 'English heritage two-storey', { storeys: 2, size: 'family', beds: 4, garage: 2, basement: true, bx: ['rec', 'guest'], front: 'office', look: 'classic', style: 'english', out: ['deck', 'yard', 'garden'] }, ['traditional', 'archEntry', 'vaultPrimary', 'kitchen:L', 'yard:garden']]
+  ['HW-124', 'Shelburne', 'English heritage two-storey', { storeys: 2, size: 'family', beds: 4, garage: 2, basement: true, bx: ['rec', 'guest'], front: 'office', look: 'classic', style: 'english', out: ['deck', 'yard', 'garden'] }, ['traditional', 'archEntry', 'vaultPrimary', 'kitchen:L', 'yard:garden']],
+  ['HW-125', 'Hautes-Terres', 'Nordic new barn with walk-out', { layout: 'barn', storeys: 1, size: 'large', beds: 4, garage: 2, basement: true, bx: ['gym', 'sauna', 'family'], front: 'office', look: 'scandi', style: 'newbarn', roomStyle: 'japandi', out: [] }, []],
 ];
 const PLAN_FAMILIES = [['all', 'All'], ['1', 'Bungalows'], ['2', 'Two-storey'], ['contemporary', 'Contemporary'], ['farm', 'Farmhouse and barn'], ['heritage', 'Heritage and classic'], ['nordic', 'Scandinavian and chalet'], ['coastal', 'Coastal']];
 const PLAN_FAM = { quebec: 'contemporary', minimal: 'contemporary', modern: 'contemporary', modcoastal: 'coastal', midmod: 'contemporary', farmhouse: 'farm', neochamp: 'farm', barn: 'farm', english: 'heritage', colonial: 'heritage', empire: 'heritage', craftsman: 'heritage', prairie: 'heritage', nordic: 'nordic', chalet: 'nordic', shinglestyle: 'coastal', harbour: 'coastal', cape: 'coastal' };
@@ -3925,6 +3993,84 @@ function mirrorHouse() {
     if (r.dir && sw[r.dir]) r.dir = sw[r.dir]; if (r.cham) r.cham.c = r.cham.c.replace(/[EW]/, m => sw[m]);
   }
   for (const r of P.rooms) fixOpenings(r);
+}
+
+// ---------- Nordic barn bungalow: a long gable bar meeting a full-depth garage volume, a rear wing with its gable to the yard,
+// a recessed two-level covered terrace between them, a flat-roofed glass entry link, and a walk-out basement ----------
+const BARN_W = 19.1, BARN_D = 19.6;
+function generateBarn(b) {
+  const look = LOOKS[b.look][2], keep = P || blankProject(), N = blankProject();
+  N.name = keep.example || !keep.name ? 'My house' : keep.name; N.units = keep.units; N.zoning = keep.zoning; N.seq = 0;
+  N.lv = { B: { h: 2.49 }, M: { h: 2.74 }, U: { h: 2.44 } };
+  N.ext = Object.assign(blankProject().ext, { style: '', porch: 'none' }); N.brief = b; N.tech = b.tech.slice();
+  N.lot = { x: 0, y: 0, w: Math.max(b.lotW, BARN_W + 2 * N.zoning.side + 1), d: Math.max(b.lotD, BARN_D + N.zoning.front + N.zoning.rear + 6) };
+  P = N; const L = P.lot, Z = P.zoning;
+  const ox = r2(L.x + Math.max(Z.side + .5, (L.w - BARN_W) / 2)), oy = r2(L.y + L.d - Math.max(Z.front + 2, 7) - BARN_D);
+  const R = (lv, type, name, x, y, w, d, o = {}) => {
+    const s = { type, name, w: r2(w), d: r2(d), items: o.items, windows: (o.wins || []).map(q => ({ wall: q[0], p: q[1], w: q[2], h: q[3], sill: q[4], style: q[5] || 'casement' })), doors: (o.doors || []).map(q => Object.assign({ wall: q[0], p: q[1], w: q[2], kind: q[3] || 'interior' }, q[4] || {})), feat: o.feat || [], floor: o.floor, walls: o.walls, ceil: o.ceil, cab: o.cab, ctr: o.ctr };
+    const r = makeRoom(s, lv); (o.doors || []).forEach((q, i) => { if (q[4] && r.doors[i]) Object.assign(r.doors[i], q[4]); }); r.x = r2(ox + x); r.y = r2(oy + y); for (const k of ['dir', 'ct', 'flat', 'canopy', 'steel', 'fence', 'style', 'cover', 'elev']) if (o[k] != null) r[k] = o[k]; P.rooms.push(r); return r;
+  };
+  const FTC = 2.2, oak = 'oak', wl = look.walls, bed = look.bed, bw = look.bedw;
+  // ----- main floor
+  R('M', 'primary', 'Primary bedroom', 0, 0, 3.6, 4.0, { floor: bed, walls: bw, ct: 'cathedral', steel: 1, items: [['bed_king', 'W', .5], ['nightstand', 'W', .5, { dy: -1.25 }], ['nightstand', 'W', .5, { dy: 1.25 }], ['bed_bench', 'C', .5, { dx: .3 }]], wins: [['N', 1.8, 2.4, FTC, .3, 'picture'], ['W', 3.2, .8, FTC, .3, 'casement']], doors: [['S', 2.7, .86], ['E', 2.6, .95, 'opening']], feat: ['Hardwired interconnected smoke alarm', 'Linear LED wall lights each side of the bed'] });
+  R('M', 'ensuite', 'Ensuite', 3.6, 0, 2.4, 4.0, { ct: 'cathedral', items: [['vanity_double', 'E', .55, { w: 1.6 }], ['tub_free', 'N', .45], ['shower', 'S', .3], ['toilet', 'W', .25]], wins: [['N', 1.6, .9, FTC, .3, 'fixed']], feat: ['Curbless shower', 'Exhaust fan ducted outside, on timer', 'Large-format greige tile'] });
+  R('M', 'closet', 'Walk-in closet', 0, 4.0, 1.8, 3.0, { floor: bed, items: [['wardrobe', 'W', .5, { w: 2.6 }]], doors: [['N', .9, .71]] });
+  R('M', 'hall', 'Primary hall', 1.8, 4.0, 1.8, 3.0, { floor: oak, walls: wl, doors: [['E', 2.2, .9]] });
+  R('M', 'office', 'Den', 0, 7.0, 3.6, 3.7, { floor: oak, walls: wl, items: [['desk', 'E', .5], ['office_chair', 'E', .5, { dx: -.65 }], ['bookshelf', 'W', .5], ['armchair', 'N', .3]], wins: [['S', 1.8, 1.8, FTC, .3, 'picture'], ['W', 1.85, .9, FTC, .3, 'fixed']], doors: [['N', 2.7, .86]] });
+  R('M', 'living', 'Living room', 3.6, 4.0, 4.2, 6.7, { floor: oak, walls: wl, ct: 'cathedral', steel: 1, items: [['sectional', 'W', .55], ['coffee_table', 'C', .55, { dx: -.2 }], ['rug', 'C', .55, { dx: -.2 }], ['fireplace_see', 'E', .3], ['floor_lamp', 'S', .9]], wins: [['N', 3.1, 1.3, FTC, .3, 'picture'], ['S', 2.1, 3.0, FTC, .3, 'picture']], doors: [['E', 3.35, 6.5, 'opening', { full: true }]], feat: ['Dimmable LED pot lights', 'Exposed black steel portal frames'] });
+  R('M', 'dining', 'Dining', 7.8, 4.0, 4.6, 6.7, { floor: oak, walls: wl, ct: 'cathedral', steel: 1, items: [['dining_set', 'C', .55, { r: 1 }], ['pendant_linear', 'C', .55]], wins: [['S', .9, 1.4, FTC, .3, 'picture']], doors: [['N', 2.3, 2.6, 'slider'], ['E', 1.0, 1.85, 'opening', { full: true }], ['S', 3.2, 1.3, 'opening']] });
+  const K = R('M', 'kitchen', 'Kitchen', 12.4, 0, 6.7, 6.0, { floor: oak, walls: wl, cab: 'cab_oak', ctr: 'quartz', ct: 'cathedral', steel: 1, items: [], wins: [['N', .8, .9, FTC, .3, 'fixed'], ['N', 5.9, .9, FTC, .3, 'fixed'], ['E', 3.0, 1.6, 1.1, 1.05]], doors: [['W', 2.0, 1.8, 'slider'], ['S', 2.2, .86, 'opening']], feat: ['Hidden range hood ducted outside', 'Integrated fridge column'] });
+  R('M', 'hall', 'Stair to basement', 12.4, 6.0, 1.4, 4.5, { floor: oak, walls: wl, doors: [] });
+  R('M', 'pantry', 'Walk-in pantry', 13.8, 6.0, 3.3, 1.6, { items: [['pantry_shelf', 'S', .5]], doors: [['N', 1.65, .81]] });
+  R('M', 'powder', 'Powder room', 17.1, 6.0, 2.0, 1.6, { items: [['toilet', 'E', .5], ['vanity', 'S', .5, { w: .8 }]], doors: [['N', 1.0, .71]], feat: ['Exhaust fan ducted outside, on timer'] });
+  R('M', 'mudroom', 'Mudroom and laundry', 13.8, 7.6, 5.3, 5.3, { items: [['lockers', 'N', .3], ['bench', 'W', .5], ['washer', 'E', .2], ['dryer', 'E', .38], ['laundry_sink', 'E', .56]], doors: [['W', 1.4, .86], ['S', 4.6, .86]], wins: [['E', 3.6, .9, 1.0, 1.1]], feat: ['Drain pan under washer', 'Floor drain', 'Boot tray'] });
+  R('M', 'closet', 'Coat closet', 12.4, 10.5, 1.4, 2.4, { items: [['wardrobe', 'E', .5, { w: 1.8 }]], doors: [] });
+  R('M', 'garage', 'Garage', 12.4, 12.9, 6.7, 6.7, { items: [['car', 'C', .58, { dx: -1.5 }], ['truck', 'C', .54, { dx: 1.55 }], ['shelving', 'N', .9]], doors: [['S', 3.35, 4.88, 'garage']], wins: [['E', 3.2, 1.0, .9, 1.2]], feat: ['Epoxy floor', 'EV charger rough-in', '3 m ceiling'] });
+  R('M', 'foyer', 'Entry', 9.6, 10.7, 2.8, 2.7, { floor: 'tile_slate', walls: wl, flat: true, canopy: { S: 1.0 }, items: [['bench', 'W', .55], ['plant', 'W', .15], ['art_trio', 'E', .3]], wins: [['W', 1.35, .9, FTC, .3, 'fixed']], doors: [['S', 1.4, 1.7, 'exterior'], ['E', .8, .81, 'opening']] });
+  // ----- walk-out basement
+  const lb = 'lvp_grey', gwin = (w, p, wd) => [w, p, wd, 1.9, .3, 'picture'];
+  R('B', 'bedroom', 'Bedroom 2', 0, 0, 3.6, 4.0, { floor: bed, walls: bw, items: [['bed_queen', 'W', .5], ['nightstand', 'W', .5, { dy: -1.05 }], ['dresser', 'E', .7]], wins: [gwin('N', 1.8, 2.2), ['W', 2.0, .9, 1.2, .9]], doors: [['S', 3.0, .81], ['E', .8, .71]], feat: ['Hardwired interconnected smoke alarm'] });
+  R('B', 'closet', 'Bedroom 2 walk-in', 3.6, 0, 2.4, 1.6, { floor: bed, items: [['wardrobe', 'N', .5, { w: 2.0 }]], doors: [] });
+  R('B', 'bathroom', 'Shower room', 3.6, 1.6, 2.4, 2.4, { items: [['vanity_double', 'E', .5, { w: 1.4 }], ['shower', 'N', .3], ['toilet', 'W', .7]], doors: [['S', 1.6, .71]], feat: ['Walk-in shower', 'Exhaust fan ducted outside, on timer'] });
+  R('B', 'hall', 'Lower corridor', 0, 4.0, 6.0, 1.2, { floor: lb, walls: wl, doors: [['E', .6, .95, 'opening']] });
+  R('B', 'bedroom', 'Bedroom 3', 0, 5.2, 3.6, 3.7, { floor: bed, walls: bw, items: [['bed_queen', 'W', .5], ['dresser', 'S', .7]], wins: [['W', 1.85, 1.0, 1.0, 1.1]], doors: [['N', 3.0, .81], ['E', 2.9, .71]], feat: ['Hardwired interconnected smoke alarm', 'Window well, 760 mm clear, with drain'] });
+  R('B', 'closet', 'Bedroom 3 walk-in', 3.6, 5.2, 2.4, 3.7, { floor: bed, items: [['wardrobe', 'E', .5, { w: 2.6 }]], doors: [] });
+  R('B', 'utility', 'Mechanical and storage', 0, 8.9, 6.0, 1.8, { items: [['shelving', 'S', .3], ['shelving', 'S', .7]], doors: [['E', .9, .81]], feat: ['Heat pump air handler and ERV', 'Water heater'] });
+  R('B', 'gym', 'Home gym', 6.0, 4.0, 4.5, 6.7, { floor: 'concrete', walls: wl, accent: 'oak_slat', items: [['dumbbells', 'W', .3], ['treadmill', 'S', .7], ['yoga_mat', 'C', .5], ['gym_mirror', 'E', .7], ['shelf_float', 'W', .7]], doors: [['N', 2.25, 2.4, 'slider']], feat: ['Polished concrete floor', 'Knotty wood plank feature wall with LED shelves'] });
+  R('B', 'hall', 'Spa hall', 10.5, 4.0, 1.9, 4.0, { floor: lb, walls: wl, doors: [['W', 2.0, 1.2, 'opening'], ['E', 1.0, .95, 'opening']] });
+  R('B', 'sauna', 'Sauna', 10.5, 8.0, 1.9, 2.7, { walls: 'pine_ceiling', ceil: 'pine_ceiling', floor: 'tile_slate', items: [['sauna', 'C', .5]], doors: [['W', 1.35, .9, 'french'], ['N', .95, .71]], feat: ['Sauna heater on a dedicated 240 V circuit', 'Glass front to the gym', 'Floor drain'] });
+  R('B', 'living', 'Family room', 12.4, 0, 6.7, 6.0, { floor: bed == 'carpet_grey' ? 'oak' : oak, walls: wl, items: [['media_unit', 'E', .5], ['tv', 'E', .5], ['sectional', 'W', .55], ['coffee_table', 'C', .55], ['rug', 'C', .55], ['floor_lamp', 'N', .1]], wins: [gwin('N', 3.35, 3.4)], doors: [['W', 2.0, 1.8, 'slider'], ['S', 3.0, 1.2, 'opening']], feat: ['Oak media wall with floating shelves', 'Conduit behind the TV'] });
+  R('B', 'stairs', 'Basement stairs', 12.4, 6.0, 1.4, 4.5, { dir: 'N', floor: lb, doors: [] });
+  R('B', 'hall', 'Lower hall', 13.8, 6.0, 5.3, 1.2, { floor: lb, walls: wl, doors: [['W', .6, .95, 'opening']] });
+  R('B', 'bedroom', 'Bedroom 4', 13.8, 7.2, 5.3, 3.4, { floor: bed, walls: bw, items: [['bed_queen', 'E', .5], ['dresser', 'W', .5]], wins: [['E', 1.7, 1.0, 1.0, 1.1]], doors: [['N', 1.0, .81], ['S', 4.4, .81]], feat: ['Hardwired interconnected smoke alarm', 'Window well, 760 mm clear, with drain'] });
+  R('B', 'storage', 'Storage', 13.8, 10.6, 5.3, 2.3, { items: [['shelving', 'S', .5]], doors: [] });
+  // ----- roofs: the garage volume runs front to back; the bar and the rear wing run into it at valleys
+  P.roofPlan = [
+    { x0: ox + 12.4, y0: oy, x1: ox + BARN_W, y1: oy + BARN_D, ax: 'y' },
+    { x0: ox, y0: oy + 4.0, x1: ox + 12.4 + 3.35, y1: oy + 10.7, ax: 'x', ab: { E: 1 }, wing: 1, stopB: ox + 12.4 },
+    { x0: ox, y0: oy, x1: ox + 6.0, y1: oy + 4.0 + 3.35, ax: 'y', ab: { S: 1 }, wing: 1, stopB: oy + 4.0 }
+  ];
+  P.roofPlanKey = roofPlanKey();
+  // ----- outside: covered terrace over a walk-out patio with a hot tub, an open patio beyond, drive and walk
+  const St = L.y + L.d;
+  R('S', 'deck', 'Covered terrace', 6.0, .05, 6.4, 3.95, { floor: 'composite', style: 'terrace', cover: true, elev: levelY('M') - .03, items: [['patio_set', 'C', .5], ['planter', 'W', .2]] });
+  R('S', 'patio', 'Covered patio', 6.0, .05, 6.4, 3.95, { floor: 'pavers', items: [['hot_tub', 'W', .35], ['outdoor_sofa', 'E', .5, { r: 3 }]] });
+  R('S', 'patio', 'Open patio', 6.0, -4.0, 6.4, 4.0, { floor: 'pavers', items: [['outdoor_sofa', 'C', .5], ['fire_table', 'C', .5, { dy: 1.4 }]] });
+  R('S', 'driveway', 'Driveway', 12.7, BARN_D, 6.1, r2(St - oy - BARN_D), {});
+  R('S', 'walk', 'Front walk', 10.4, 13.4, 1.6, r2(St - oy - 13.4), { floor: 'concrete' });
+  P.site = Object.assign({}, P.site || {}, { walkout: true, fall: Math.max(2.6, (keep.site || {}).fall || 0), toward: 'N', courts: [{ x: ox + 6.0, y: oy - 4.0, w: 6.4, d: 8.0 }] });
+  // ----- finishes and look
+  applyStyle('newbarn'); P.ext.glaze = 'max';
+  if (b.style && b.style != 'newbarn' && STYLES[b.style]) applyStyle(b.style);
+  const X = b.ext || {}; for (const k of ['pitch', 'shape', 'eave', 'frame', 'gglass', 'gwin', 'sconce', 'door', 'gdoor']) if (X[k] != null) P.ext[k] = X[k];
+  if (b.siding) P.ext.siding = b.siding; if (b.roof) P.ext.roof = b.roof;
+  setEntry('glass');
+  const feats = [b.roomStyle || 'japandi', ...b.features.filter(f => !/^yard:|^kitchen:|cathedralLiving|vaultPrimary|glassRear/.test(f))];
+  if (typeof finishPlan == 'function') finishPlan(feats);
+  planKitchen(K, { layout: 'L', wall: 'E', island: 'large', seats: true, uppers: 'none', pantry: true, lights: true, cab: 'cab_oak', ctr: 'quartz' });
+  for (const r of indoor()) if (/ensuite|bathroom|powder/.test(r.type)) r.walls = r.walls || 'greige';
+  applyTech(); resolveOpenings(); unblockAll(true);
+  return P;
 }
 
 // ---------- Budget: a transparent range estimate built from the design itself ----------
@@ -5194,6 +5340,7 @@ function buildRoom(g, r, ops, showCeil, lights) {
     for (let o of wo) {
       if (o.r !== r || o.join) continue;
       const m = (o.a + o.b) / 2, isExt = ext.some(v => m > v[0] && m < v[1]), ca = e.c - inw * (isExt ? .16 : .06), cb = e.c + inw * .06, f = .04;
+      if (o.full) continue; // a full-height opening: the wall simply stops
       if (o.o) trimOpening(g, e, o, inw, isExt, r, t);
       if (isExt && o.door && o.o && r.lv != 'B' && o.y0 < 1.5 && (o.o.kind != 'garage' || P.ext.sconce == 'cylinder')) for (const sa of o.o.kind == 'garage' ? [o.a - .35, o.b + .35] : [o.b + .28 + (o.o.tr && P.ext.entry == 'glass' ? .05 : 0)]) { // wall lights beside the doors
         const so = e.c - inw * .19, sy = o.y0 + (o.o.kind == 'garage' ? 2.3 : 1.95), sp = e.h ? [sa, sy, so - inw * .07] : [so - inw * .07, sy, sa], lm = mat('matte_black'), cyl = P.ext.sconce == 'cylinder';
@@ -5228,7 +5375,7 @@ function buildRoom(g, r, ops, showCeil, lights) {
   const big = r.w * r.d > 26, lx = r.w >= r.d, n = big ? 2 : 1;
   const winA = r.wins.reduce((s, w) => s + w.w * w.h, 0) + r.doors.filter(d => ['slider', 'french', 'double', 'bifold'].includes(d.kind)).reduce((s, d) => s + d.w * 1.9, 0) + (r.sky || []).length * .9;
   const dayF = clamp(winA / Math.max(r.w * r.d, 1) * 2.4, .04, .95) * (r.lv == 'B' ? .6 : 1);
-  const col = lightColor(r), fx = roomLights(r), cfx = fx.filter(i => ITEMS[i.k].top), la = [x0 - .01, fy - .2, z0 - .01], lb = [x1 + .01, topY(r), z1 + .01];
+  const col = lightColor(r), fx = roomLights(r), cfx = fx.filter(i => ITEMS[i.k].top), la = [x0 - .01, fy - .2, z0 - .01], lb = [x1 + .01, topY(r) + (r.ct == 'vaulted' || r.ct == 'cathedral' ? vaultRise(r) + .3 : 0), z1 + .01];
   const I = cfx.length ? clamp(cfx.reduce((s, i) => s + ITEMS[i.k].lm, 0) / 1900, .25, 3.4) / n : (t.dim ? .5 : 1) * (.75 + Math.min(r.w * r.d, 30) * .045) / (big ? 1.4 : 1);
   for (let i = 0; i < n; i++) {
     const cx = x0 + (lx ? r.w * (i + .5) / n : r.w / 2), cz = z0 + (lx ? r.d / 2 : r.d * (i + .5) / n);
@@ -5259,7 +5406,8 @@ function buildItems(g, r, fy, ceilY) {
 function matTint(k, hex) { const key = k + '|' + hex; if (MC[key]) return MC[key]; const d = MATS[k] || MATS.white; return MC[key] = { c1: hex2lin(hex), c2: hex2lin(hex), par: [d[1], d[4], d[5], 0] }; }
 function buildZone(g, z) {
   const raised = z.type == 'deck' || z.type == 'porch', gr = gradeAt(z.x + z.w / 2, z.y + z.d / 2), y = zoneY(z) + (raised ? 0 : gr), x0 = z.x, x1 = z.x + z.w, z0 = z.y, z1 = z.y + z.d, fm = mat(z.floor), { sides, hs } = zoneSides(z);
-  if (raised) {
+  if (raised && z.style == 'terrace') { buildTerrace(g, z, y, gr, fm, sides, hs); }
+  else if (raised) {
     g.box(x0, y - .14, z0, x1, y, z1, fm);
     const post = mat('wood'), trim = mat('trim'), nx = Math.max(1, Math.round(z.w / 2.4)), nz = Math.max(1, Math.round(z.d / 2.4));
     for (let i = 0; i <= nx; i++) for (let j = 0; j <= nz; j++) g.box(x0 + (z.w - .14) * i / nx, Math.min(gr, y - .3), z0 + (z.d - .14) * j / nz, x0 + (z.w - .14) * i / nx + .14, y - .14, z0 + (z.d - .14) * j / nz + .14, post);
@@ -5303,9 +5451,10 @@ function buildRoofs(g) {
     const pt = (u, v, y) => x ? [u, y, v] : [v, y, u], nrm = s => x ? [0, 1 / nl, s * p / nl] : [s * p / nl, 1 / nl, 0], nrmU = s => x ? [s * p / nl, 1 / nl, 0] : [0, 1 / nl, s * p / nl];
     for (const s of [-1, 1]) {
       const ve = s < 0 ? v0 - e : v1 + e, n = nrm(s);
-      g.quad(pt(U0, ve, ye), pt(U1, ve, ye), pt(ub, vm, yr), pt(ua, vm, yr), n, rm);
-      g.quad(pt(U0, ve, ye - .04), pt(U1, ve, ye - .04), pt(ub, vm, yr - .04), pt(ua, vm, yr - .04), n.map(v => -v), sf);
-      g.quad(pt(U0, ve, ye - fh), pt(U1, ve, ye - fh), pt(U1, ve, ye + .01), pt(U0, ve, ye + .01), x ? [0, 0, s] : [s, 0, 0], ftm);
+      const E0 = G.eU0, E1 = G.eU1;
+      g.quad(pt(E0, ve, ye), pt(E1, ve, ye), pt(ub, vm, yr), pt(ua, vm, yr), n, rm);
+      g.quad(pt(E0, ve, ye - .04), pt(E1, ve, ye - .04), pt(ub, vm, yr - .04), pt(ua, vm, yr - .04), n.map(v => -v), sf);
+      g.quad(pt(E0, ve, ye - fh), pt(E1, ve, ye - fh), pt(E1, ve, ye + .01), pt(E0, ve, ye + .01), x ? [0, 0, s] : [s, 0, 0], ftm);
     }
     for (const [u, hip, ab, s, ur] of [[U0, G.hipA, G.abA, -1, ua], [U1, G.hipB, G.abB, 1, ub]]) {
       if (hip) { const n = nrmU(s); g.tri(pt(u, v0 - e, ye), pt(u, v1 + e, ye), pt(ur, vm, yr), n, mat(P.ext.roof, null, x)); g.tri(pt(u, v0 - e, ye - .04), pt(u, v1 + e, ye - .04), pt(ur, vm, yr - .04), n.map(v => -v), sf); g.quad(pt(u, v0 - e, ye - .18), pt(u, v1 + e, ye - .18), pt(u, v1 + e, ye + .01), pt(u, v0 - e, ye + .01), x ? [s, 0, 0] : [0, 0, s], tr); }
@@ -5343,7 +5492,7 @@ function buildScene(mode, lv) {
     const M = indoor('M');
     if ((P.tech || []).includes('heat_pump') && M.length) { const my = Math.min(...M.map(r => r.y)), xr = Math.max(...M.filter(r => Math.abs(r.y - my) < .05).map(r => r.x + r.w)); buildItems(g, { x: xr - 1.1, y: my - .5, items: [{ k: 'heat_pump', x: 0, y: 0, r: 2 }] }, .08, 3); }
   }
-  if (mode != 'doll') buildRoofs(g);
+  if (mode != 'doll') { buildRoofs(g); buildFlatRoofs(g); }
   const all = P.rooms.length ? bbox(P.rooms.filter(r => mode != 'doll' || isOut(r) ? ground || !isOut(r) : show(r.lv))) || bbox(P.rooms) : { x0: P.lot.x, y0: P.lot.y, x1: P.lot.x + P.lot.w, y1: P.lot.y + P.lot.d };
   return { V: new Float32Array(g.V), G: new Float32Array(g.G), lights, box: all, B: g.B, TR: g.TR };
 }
@@ -5488,7 +5637,7 @@ ${PAT_GLSL}
       if(em>0.){ float nl=max(dot(N,L),0.); vec3 Lc=mix(vec3(lum(uSkyIrr))*vec3(1.04,1.,.93),uSkyIrr,.4)*(uWS[i]*em/(q+uWS[i]*.35)*uWin); vec3 H=normalize(L+V); vec3 F=F0+(1.-F0)*pow(1.-max(dot(V,H),0.),5.);
         col+=(dif*(1.-F)*(nl*.9+.1)+PI*ggx(max(dot(N,H),0.),max(a,.08))*vis(max(nl,1e-3),NdV,max(a,.08))*F*nl*.6)*Lc*mix(1.,ao,.6)*uInt; } } }
   if(uHasAO==1) bao=mix(1.,bao,.35);
-  vec3 hemi=mix(uGnd,uSky,N.y*.5+.5); if(inR>0.) hemi=mix(vec3(lum(hemi))*vec3(1.06,1.,.9),hemi,.35);
+  vec3 hemi=mix(uGnd,uSky,N.y*.5+.5); if(inR>0.){ float sl=lum(uSky); hemi=vec3(sl*mix(.78,1.,N.y*.5+.5))*vec3(1.06,1.,.9); }
   vec3 amb=inR>0.?(hemi*uAmb*(uInAmb+ld*.45)+vec3(lum(uSkyIrr))*ld*.18)*uInt+fill:hemi*uAmb;
   col+=dif*amb*ao*bao;
   // reflections: the sky outside, the room's own light inside
@@ -5841,6 +5990,35 @@ function buildOpening(g, e, o, inw, isExt, r, ca, cb, wm, gl, trim) {
     const n = Math.max(2, Math.round(o.o.w / .8)), pw = (o.o.w - 2 * f) / n, out = isExt ? -inw : inw;
     for (let i = 0; i < n; i++) { const u = o.a + f + .02 + i * .07, c0 = e.c + out * (isExt ? .2 : .08), c1 = c0 + out * pw; B(u, u + .05, c0, c1, o.y0 + .02, top, fr); B(u + .015, u + .035, c0 + out * .06, c1 - out * .06, o.y0 + .1, top - .08, gl); }
     B(o.a, o.b, ca, cb, o.y0, o.y0 + .03, fr); if (isExt) stoop(g, e, o, inw);
+  }
+}
+
+// ---------- flat roofs: link volumes between gables, with a canopy over a recessed entry ----------
+function buildFlatRoofs(g) {
+  const rm = mat(P.ext.roof), fb = mat('matte_black'), sf = mat('soffit'), glow = mat('glow_warm');
+  for (const r of indoor('M')) {
+    if (!r.flat || indoor('U').some(u => ovl(u.x, u.x + u.w, r.x, r.x + r.w) && ovl(u.y, u.y + u.d, r.y, r.y + r.d))) continue;
+    const c = r.canopy || {}, top = levelY('M') + lvH('M') + .15, x0 = r.x - .16 - (c.W || 0), x1 = r.x + r.w + .16 + (c.E || 0), z0 = r.y - .16 - (c.N || 0), z1 = r.y + r.d + .16 + (c.S || 0);
+    g.box(x0, top, z0, x1, top + .28, z1, rm); g.box(x0 - .02, top + .2, z0 - .02, x1 + .02, top + .3, z1 + .02, fb);
+    g.box(x0, top - .02, z0, x1, top, z1, sf);
+    for (const [w, d] of Object.entries(c)) { if (d < .4) continue; const n = Math.max(1, Math.round((w == 'N' || w == 'S' ? r.w : r.d) / 1.2)); for (let i = 0; i < n; i++) { const t = (i + .5) / n, px = w == 'N' || w == 'S' ? r.x + r.w * t : w == 'W' ? r.x - .16 - d / 2 : r.x + r.w + .16 + d / 2, pz = w == 'E' || w == 'W' ? r.y + r.d * t : w == 'N' ? r.y - .16 - d / 2 : r.y + r.d + .16 + d / 2; g.box(px - .05, top - .03, pz - .05, px + .05, top - .02, pz + .05, glow); } }
+  }
+}
+// ---------- a covered terrace: slab edge in steel, frameless glass, steel columns and a flat roof with downlights ----------
+function buildTerrace(g, z, y, gr, fm, sides, hs) {
+  const x0 = z.x, x1 = z.x + z.w, z0 = z.y, z1 = z.y + z.d, st = mat('dark_steel'), fb = mat('matte_black'), gl = mat('glass'), glow = mat('glow_warm'), hr = levelY('M') + lvH('M') + .15;
+  g.box(x0, y - .3, z0, x1, y, z1, fm); g.box(x0, y - .3, z0, x1, y - .28, z1, mat('soffit'));
+  const houseSides = 'NESW'.split('').filter(w => !sides[w].iv.length || sides[w].iv.reduce((s, [a, b]) => s + b - a, 0) < (w == 'N' || w == 'S' ? z.w : z.d) * .5);
+  const open = 'NESW'.split('').filter(w => !houseSides.includes(w));
+  for (const w of open) { const { e, iv } = sides[w], inw = (w == 'N' || w == 'W') ? 1 : -1; for (const [a, b] of iv) { if (b - a < .15) continue; g.along(e.h, a, b, e.c - inw * .01, e.c + inw * .02, y - .3, y - .02, fb); g.along(e.h, a + .01, b - .01, e.c + inw * .03, e.c + inw * .05, y, y + 1.07, gl); g.along(e.h, a, b, e.c + inw * .02, e.c + inw * .06, y - .02, y + .06, fb); } }
+  const corners = [[x0, z0], [x1, z0], [x0, z1], [x1, z1]].filter(([cx, cz]) => open.includes(cz == z0 ? 'N' : 'S') && open.includes(cx == x0 ? 'W' : 'E'));
+  const bot = Math.min(gr, y - .3);
+  for (const [cx, cz] of corners) { const sx = cx == x0 ? 0 : -.16, sz = cz == z0 ? 0 : -.16; g.box(cx + sx, bot, cz + sz, cx + sx + .16, z.cover ? hr : y - .3, cz + sz + .16, st); }
+  if (z.cover) { // flat roof over the terrace, flush with the walls' top
+    const ov = .25, X0 = x0 - (open.includes('W') ? ov : 0), X1 = x1 + (open.includes('E') ? ov : 0), Z0 = z0 - (open.includes('N') ? ov : 0), Z1 = z1 + (open.includes('S') ? ov : 0);
+    g.box(X0, hr, Z0, X1, hr + .3, Z1, mat(P.ext.roof)); g.box(X0 - .02, hr + .2, Z0 - .02, X1 + .02, hr + .32, Z1 + .02, fb); g.box(X0, hr - .02, Z0, X1, hr, Z1, mat('soffit'));
+    const nx = Math.max(1, Math.round(z.w / 1.6)), nz = Math.max(1, Math.round(z.d / 1.6));
+    for (let i = 0; i < nx; i++) for (let j = 0; j < nz; j++) { const px = x0 + z.w * (i + .5) / nx, pz = z0 + z.d * (j + .5) / nz; g.box(px - .05, hr - .03, pz - .05, px + .05, hr - .02, pz + .05, glow); g.box(px - .05, y - .31, pz - .05, px + .05, y - .3, pz + .05, glow); }
   }
 }
 
@@ -6310,13 +6488,14 @@ function renderSheet() {
       h += `<div class="row"><button class="btn" data-a="tab" data-v="chat">Describe changes in Chat</button></div>
       <div class="row">${fld('Name', 'f-name', 'rname', r.name, 'type="text" maxlength="40"')}${out ? '' : selc('Level', 'f-lv', 'rlv', LORD.map(l => [l, LNAME[l]]), r.lv)}</div>
       ${out ? '' : `<div class="row">${selc('Ceiling', 'f-ct', 'rceil', CEIL_TYPES.filter(c => c[0] != 'double' || (r.lv == 'M' && !r.part)), r.ct || 'flat')}${selc('Angled corner', 'f-ch', 'rcham', [['', 'None'], ['NE', 'North-east'], ['NW', 'North-west'], ['SE', 'South-east'], ['SW', 'South-west']], (r.cham && r.cham.c) || '')}${r.cham ? num(`Corner size (${U()})`, 'f-chs', 'rchams', toU(r.cham.s)) : ''}${r.lv == 'U' && voidIvAll(r) ? selc('Side facing the two-storey space', 'f-ov', 'rover', [['0', 'Solid wall'], ['1', 'Open with a railing']], r.overlook ? '1' : '0') : ''}</div>`}
+      ${out ? '' : `<div class="row" style="align-items:center">${(r.ct == 'vaulted' || r.ct == 'cathedral') ? `<button class="chip${r.steel ? ' on' : ''}" data-a="rtog" data-v="steel">Exposed black steel frames</button>` : ''}${r.lv == 'M' && !r.part && !indoor('U').some(u => ovArea(u, r) > .2) ? `<button class="chip${r.flat ? ' on' : ''}" data-a="rtog" data-v="flat">Flat roof over this room</button>` : ''}${r.flat ? `<button class="chip${r.canopy ? ' on' : ''}" data-a="rtog" data-v="canopy">Canopy over the front</button>` : ''}</div>`}
       <div class="row">${num(`Width, east-west (${U()})`, 'f-w', 'rw', toU(r.w))}${num(`Depth, north-south (${U()})`, 'f-d', 'rd', toU(r.d))}${out ? '' : num(`Ceiling (${U()})`, 'f-h', 'rh', toU(r.h))}</div>
       ${out ? '' : `<div class="row" style="align-items:center"><span class="muted" style="font-size:13px">Budget priority:</span><span class="chips" style="margin:0">${Object.entries(PRIO).map(([k, p]) => `<button class="chip${prioOf(r) == k ? ' on' : ''}" data-a="rprio" data-v="${k}">${p[0]}</button>`).join('')}</span></div>`}
       <div class="row" style="align-items:center"><span class="muted" style="font-size:13px">When the size changes, keep fixed:</span><span class="chips" style="margin:0">${[['W', 'Left side'], ['C', 'Centre'], ['E', 'Right side']].map(([k, n]) => `<button class="chip${(UI.anX || 'W') == k ? ' on' : ''}" data-a="anchor" data-k="x" data-v="${k}">${n}</button>`).join('')}</span><span class="chips" style="margin:0">${[['N', 'Top'], ['C', 'Middle'], ['S', 'Bottom']].map(([k, n]) => `<button class="chip${(UI.anY || 'N') == k ? ' on' : ''}" data-a="anchor" data-k="y" data-v="${k}">${n}</button>`).join('')}</span></div>
       <div class="row">${num(`From the left lot line (${U()})`, 'f-x', 'rx', toU(r.x - P.lot.x))}${num(`From the back lot line (${U()})`, 'f-y', 'ry', toU(r.y - P.lot.y))}</div>
       ${out ? '' : `<div class="card row"><p class="muted" style="flex:1;min-width:160px">${r.part ? 'This is a wing of ' + esc(rootOf(r).name) + '. The wall between them is left open.' : 'Shape: add a wing to make this room L, T or U shaped. Drag and resize the wing like any room.'}</p>${r.part ? '<button class="btn" data-a="unwing">Make it a separate room</button>' : '<button class="btn" data-a="wing">Add wing</button>'}<button class="btn" data-a="dup">Copy room</button></div>`}
       ${t.stair ? `<div class="row">${selc('Stair climbs toward', 'f-dir', 'rdir', [['N', 'North'], ['S', 'South'], ['E', 'East'], ['W', 'West']], stairInfo(r).dir)}<span class="muted" style="flex:2">${(() => { const s = stairInfo(r); return `${s.n} risers of ${Math.round(s.rise * 1000)} mm, run ${Math.round(s.run * 1000)} mm`; })()}</span></div>` : ''}
-      ${r.type == 'deck' ? `<div class="row">${num(`Deck height above grade (${U()})`, 'f-elev', 'relev', toU(zoneY(r)))}</div>` : ''}
+      ${r.type == 'deck' ? `<div class="row">${num(`Deck height above grade (${U()})`, 'f-elev', 'relev', toU(zoneY(r)))}</div><div class="chips"><button class="chip${r.style == 'terrace' ? ' on' : ''}" data-a="rtog" data-v="terrace">Modern terrace: steel edge, frameless glass</button><button class="chip${r.cover ? ' on' : ''}" data-a="rtog" data-v="cover">Flat roof over it, with downlights</button></div>` : ''}
       ${r.fence ? `<div class="row">${num(`Fence height (${U()})`, 'f-fh', 'rfh', toU(r.fh))}</div>` : ''}`;
     } else if (UI.tab == 'style') {
       const mb = moodBoard(r), sw = styleWords(r);
@@ -6352,7 +6531,7 @@ function renderSheet() {
       h += order.map(c => `<h3>Add: ${c}</h3><div class="chips">${cats[c].map(k => `<button class="chip" data-a="additem" data-k="${k}">${esc(ITEMS[k].n)}</button>`).join('')}</div>`).join('');
     } else if (UI.tab == 'open') {
       const walls = [['N', 'North wall'], ['E', 'East wall'], ['S', 'South wall'], ['W', 'West wall']];
-      const op = (kind, o, i) => { const len = o.wall == 'N' || o.wall == 'S' ? r.w : r.d, id = kind + i; return `<div class="op"><div class="row">${selc(kind == 'doors' ? 'Door on' : 'Window on', id + 'w', 'op', walls, o.wall, `data-k="${kind}" data-i="${i}" data-p="wall"`)}${kind == 'doors' ? selc('Type', id + 'k', 'op', DOOR_KINDS, o.kind, `data-k="${kind}" data-i="${i}" data-p="kind"`) + (['interior', 'exterior', 'double', 'french'].includes(o.kind) ? selc('Above', id + 't', 'op', [['0', 'Nothing'], ['1', 'Glass transom']], o.tr ? '1' : '0', `data-k="${kind}" data-i="${i}" data-p="tr"`) : '') : selc('Style', id + 's', 'op', WIN_STYLES, o.style, `data-k="${kind}" data-i="${i}" data-p="style"`)}<button class="btn d" data-a="rmop" data-k="${kind}" data-i="${i}">Remove</button></div>
+      const op = (kind, o, i) => { const len = o.wall == 'N' || o.wall == 'S' ? r.w : r.d, id = kind + i; return `<div class="op"><div class="row">${selc(kind == 'doors' ? 'Door on' : 'Window on', id + 'w', 'op', walls, o.wall, `data-k="${kind}" data-i="${i}" data-p="wall"`)}${kind == 'doors' ? selc('Type', id + 'k', 'op', DOOR_KINDS, o.kind, `data-k="${kind}" data-i="${i}" data-p="kind"`) + (['interior', 'exterior', 'double', 'french'].includes(o.kind) ? selc('Above', id + 't', 'op', [['0', 'Nothing'], ['1', 'Glass transom']], o.tr ? '1' : '0', `data-k="${kind}" data-i="${i}" data-p="tr"`) : o.kind == 'opening' ? selc('Height', id + 't', 'op', [['0', 'Door height, wall above'], ['1', 'Full height, no wall above']], o.full ? '1' : '0', `data-k="${kind}" data-i="${i}" data-p="full"`) : '') : selc('Style', id + 's', 'op', WIN_STYLES, o.style, `data-k="${kind}" data-i="${i}" data-p="style"`)}<button class="btn d" data-a="rmop" data-k="${kind}" data-i="${i}">Remove</button></div>
         <div class="row">${num(`Width (${U()})`, id + 'ww', 'op', toU(o.w), `data-k="${kind}" data-i="${i}" data-p="w"`)}${kind == 'wins' ? num(`Height (${U()})`, id + 'h', 'op', toU(o.h), `data-k="${kind}" data-i="${i}" data-p="h"`) + num(`Sill (${U()})`, id + 'sl', 'op', toU(o.sill), `data-k="${kind}" data-i="${i}" data-p="sill"`) : ''}</div>
         <label class="fld" for="${id}p">Slide along the wall<input type="range" id="${id}p" min="0" max="${len}" step="0.05" value="${o.p}" data-f="opp" data-k="${kind}" data-i="${i}"></label></div>`; };
       h += `<div class="row"><button class="btn" data-a="adddoor">+ Door</button><button class="btn" data-a="addwin">+ Window</button><button class="btn" data-a="addsky">+ Skylight</button><span class="muted">North is up on the plan. Picking a window style sets a typical size.</span></div>` + r.doors.map((o, i) => op('doors', o, i)).join('') + r.wins.map((o, i) => op('wins', o, i)).join('') + (r.sky || []).map((k, i) => `<div class="op"><div class="row"><b style="flex:1">Skylight ${i + 1}, ${fL(k.w)} × ${fL(k.d)}</b><button class="btn d" data-a="rmsky" data-i="${i}">Remove</button></div><label class="fld">East-west position<input type="range" min="0" max="${r.w}" step="0.05" value="${k.x}" data-f="skyp" data-i="${i}" data-p="x"></label><label class="fld">North-south position<input type="range" min="0" max="${r.d}" step="0.05" value="${k.y}" data-f="skyp" data-i="${i}" data-p="y"></label></div>`).join('');
@@ -6630,6 +6809,7 @@ function initMic(d) {
 
 function briefExtras(b) { // details read from a description that the questions do not ask about
   const X = b.ext || {}, L = [];
+  if (b.layout == 'barn') L.push('Nordic barn layout: twin rear gables around a two-level covered terrace, flat-roofed glass entry link, cathedral great room with steel frames, walk-out basement with 3 bedrooms, gym, sauna and family room');
   if (b.footprint) L.push((FOOTPRINTS.find(f => f[0] == b.footprint) || [, b.footprint])[1].toLowerCase() + ' footprint');
   if (b.walkout) L.push('walk-out basement, lot falling to the back');
   if (X.pitch) L.push(Math.round(X.pitch * 12) + '/12 roof'); if (X.shape) L.push(X.shape + ' roof'); if (X.eave) L.push({ .2: 'almost no overhang', .3: 'tight overhang', .45: 'standard overhang', .7: 'deep overhang' }[X.eave] || 'custom overhang');
@@ -7092,7 +7272,7 @@ const A = {
     if (k == 'gstyle') { P.ext.gglass = v == 'glass'; P.ext.gwin = v == 'row'; commit(); renderSheet(); if (UI.view == 'view3d') show3D(); return; }
     if (k == 'porch') { P.ext.porch = v; if (!setPorch(v)) toast('Add an exterior door on a south wall first; the porch attaches to it.', 4200); } else P.ext[k] = k == 'pitch' || k == 'dormers' || k == 'eave' ? +v : k == 'grilles' || k == 'gwin' || k == 'cupola' ? v == '1' : v; if (!['door', 'gdoor', 'gwin', 'cupola', 'sconce'].includes(k)) P.ext.style = ''; commit(); renderSheet(); if (UI.view == 'view3d') show3D(); },
   see3d: () => { G.mode = 'ext'; G.camKey = null; go('view3d'); },
-  bset: t => setBrief(t.dataset.k, t.dataset.v), btog: t => setBrief(t.dataset.k, t.dataset.v, true), bfill: () => fillBrief(), bextclear: () => { const b = brief(); Object.assign(b, { ext: {}, footprint: '', features: [], roomStyle: '', walkout: false, bbeds: null }); renderBrief(); }, build: () => buildHouse(),
+  bset: t => setBrief(t.dataset.k, t.dataset.v), btog: t => setBrief(t.dataset.k, t.dataset.v, true), bfill: () => fillBrief(), bextclear: () => { const b = brief(); Object.assign(b, { ext: {}, footprint: '', features: [], roomStyle: '', walkout: false, bbeds: null, layout: 'standard' }); renderBrief(); }, build: () => buildHouse(),
   bpre: t => { brief().tech = TECH_SETS[t.dataset.v].slice(); renderBrief(); }, btech: t => { const a = brief().tech, i = a.indexOf(t.dataset.v); if (i >= 0) a.splice(i, 1); else a.push(t.dataset.v); renderBrief(); },
   tpre: t => { P.tech = TECH_SETS[t.dataset.v].slice(); applyTech(); commit(); renderSheet(); }, ttech: t => { P.tech = P.tech || []; const i = P.tech.indexOf(t.dataset.v); if (i >= 0) P.tech.splice(i, 1); else P.tech.push(t.dataset.v); applyTech(); commit(); renderSheet(); },
   setext: t => { P.ext[t.dataset.slot] = t.dataset.k; commit(); renderSheet(); },
@@ -7195,6 +7375,9 @@ const A = {
   histgo: t => { const n = +t.dataset.v; for (let i = 0; i < n; i++) if (!stepBack()) break; afterJump(); renderSheet(); toast('Back to: ' + t.dataset.l); },
   histfwd: t => { const n = +t.dataset.v; for (let i = 0; i < n; i++) if (!stepFwd()) break; afterJump(); renderSheet(); },
   gmode: t => { G.mode = t.dataset.v; G.camKey = null; show3D(); },
+  rtog: t => { const r = cur(); if (!r) return; const v = t.dataset.v;
+    if (v == 'steel') r.steel = !r.steel; else if (v == 'flat') { r.flat = !r.flat; if (!r.flat) delete r.canopy; } else if (v == 'canopy') r.canopy = r.canopy ? null : { S: 1.0 }; else if (v == 'terrace') r.style = r.style == 'terrace' ? '' : 'terrace'; else if (v == 'cover') { r.cover = !r.cover; if (r.cover) r.style = 'terrace'; }
+    commit(); renderSheet(); if (UI.view == 'view3d') show3D(); },
   chkfix: t => { if (t.dataset.v == 'items') { const n = unblockAll(); commit(); refresh(); const left = CHK.filter(c => c.fix == 'items').length; toast(n ? `Moved ${n} piece${n > 1 ? 's' : ''} clear of doors and windows.${left ? ' ' + left + ' still need a hand: drag them on the plan.' : ''}` : 'There is no free spot along that wall. Drag it on the plan or remove it.', 5000); return; }
     if (t.dataset.v == 'open') { const n = CHK.filter(c => c.fix == 'open').length; commit(); refresh(); const left = CHK.filter(c => c.fix == 'open').length; if (left >= n) toast('There is no free stretch of wall for it. Make one of them narrower or remove it.', 5000); } },
   lights: () => { GLR.env.lightsOn = !GLR.env.lightsOn; render3DUI(); GLR.req(); },
@@ -7265,7 +7448,7 @@ const F = {
   rfh: v => { cur().fh = clamp(fromU(v), .6, 3); commit(); renderSheet(); },
   wallhex: v => { for (const q of partsOf(cur())) q.walls = v; cur().walls = v; commit(); renderSheet(); renderPlan(); },
   notes: v => { cur().notes = v.slice(0, 600); commit(); },
-  op: (v, t) => { const r = cur(), o = r[t.dataset.k][+t.dataset.i], p = t.dataset.p; if (['w', 'h', 'sill'].includes(p)) { if (!(+v >= 0)) return; o[p] = p == 'sill' ? clamp(fromU(v), 0, 2.2) : clamp(fromU(v), .3, p == 'w' ? 8 : 2.4); } else if (p == 'tr') { if (v == '1') o.tr = true; else delete o.tr; } else { o[p] = v; if (p == 'style' && WIN_PRESET[v]) Object.assign(o, WIN_PRESET[v]); } if (p == 'wall') { const len = v == 'N' || v == 'S' ? r.w : r.d; o.p = r2(len / 2); } fixOpenings(r); commit(); renderSheet(); renderPlan(); },
+  op: (v, t) => { const r = cur(), o = r[t.dataset.k][+t.dataset.i], p = t.dataset.p; if (['w', 'h', 'sill'].includes(p)) { if (!(+v >= 0)) return; o[p] = p == 'sill' ? clamp(fromU(v), 0, 2.2) : clamp(fromU(v), .3, p == 'w' ? 8 : 2.4); } else if (p == 'tr') { if (v == '1') o.tr = true; else delete o.tr; } else if (p == 'full') { if (v == '1') o.full = true; else delete o.full; } else { o[p] = v; if (p == 'style' && WIN_PRESET[v]) Object.assign(o, WIN_PRESET[v]); } if (p == 'wall') { const len = v == 'N' || v == 'S' ? r.w : r.d; o.p = r2(len / 2); } fixOpenings(r); commit(); renderSheet(); renderPlan(); },
   opp: (v, t, live) => { const r = cur(), o = r[t.dataset.k][+t.dataset.i]; o.p = +v; fixOpenings(r); if (live) { renderPlan(); return; } commit(); renderPlan(); },
   pname: v => { P.name = v.trim().slice(0, 50) || 'My house'; delete P.example; commit(); },
   units: v => { P.units = v; commit(); refresh(); },
